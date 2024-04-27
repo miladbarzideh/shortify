@@ -5,6 +5,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/miladbarzideh/shortify/internal/domain/handler"
+	"github.com/miladbarzideh/shortify/internal/domain/service"
 )
 
 type Server struct {
@@ -16,6 +17,7 @@ func NewServer(logger *logrus.Logger) *Server {
 		logger: logger,
 	}
 }
+
 func (s *Server) Run() error {
 	app := echo.New()
 	s.mapHandlers(app)
@@ -24,10 +26,11 @@ func (s *Server) Run() error {
 
 func (s *Server) mapHandlers(app *echo.Echo) {
 
-	urlHandler := handler.NewHandler(s.logger)
+	urlService := service.NewService(s.logger)
+	urlHandler := handler.NewHandler(s.logger, urlService)
 
 	// Map routes
 	group := app.Group("/api/v1")
 	group.POST("/shorten", urlHandler.CreateShortURL())
-	group.GET(":url", urlHandler.GetShortURL())
+	group.GET(":url", urlHandler.RedirectToLongURL())
 }
