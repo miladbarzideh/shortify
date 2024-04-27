@@ -1,15 +1,14 @@
 package main
 
 import (
-	"net/http"
-
-	"github.com/labstack/echo/v4"
+	"github.com/miladbarzideh/shortify/internal/app"
+	"github.com/miladbarzideh/shortify/internal/infra/logger"
 )
 
 func main() {
-	e := echo.New()
-	e.GET("/", func(c echo.Context) error {
-		return c.String(http.StatusOK, "Hello, World!")
-	})
-	e.Logger.Fatal(e.Start(":1323"))
+	log := logger.InitLogger()
+	server := app.NewServer(log)
+	if server.Run() != nil {
+		log.Fatal("failed to start the app")
+	}
 }
