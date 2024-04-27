@@ -1,10 +1,10 @@
 package app
 
 import (
-	"net/http"
-
 	"github.com/labstack/echo/v4"
 	"github.com/sirupsen/logrus"
+
+	"github.com/miladbarzideh/shortify/internal/domain/handler"
 )
 
 type Server struct {
@@ -18,8 +18,16 @@ func NewServer(logger *logrus.Logger) *Server {
 }
 func (s *Server) Run() error {
 	app := echo.New()
-	app.GET("/", func(c echo.Context) error {
-		return c.String(http.StatusOK, "Hello, World!")
-	})
+	s.mapHandlers(app)
 	return app.Start(":8080")
+}
+
+func (s *Server) mapHandlers(app *echo.Echo) {
+
+	urlHandler := handler.NewHandler(s.logger)
+
+	// Map routes
+	group := app.Group("/api/v1")
+	group.POST("/shorten", urlHandler.CreateShortURL())
+	group.GET(":url", urlHandler.GetShortURL())
 }
