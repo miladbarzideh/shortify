@@ -2,7 +2,7 @@
 
 ## Introduction
 
-The goal of this phase is to implement a simple URL shortener with two endpoints using the Go programming language, Echo framework, and Logrus for logging. In this phase, we will not use any databases and use an in-memory solution to store data.
+In this phase, we will not use any databases and use an in-memory solution to store data.
 
 ## Implementation Details
 
@@ -19,7 +19,7 @@ The goal of this phase is to implement a simple URL shortener with two endpoints
 - **Response Body**: Return short url:
   ```json
   {
-  "short_url": "http://short.url/abcdef"
+  "url": "http://short.url/abcdef"
   }
 
 ### Endpoint: Redirect
@@ -27,9 +27,9 @@ The goal of this phase is to implement a simple URL shortener with two endpoints
 - **URL**: `/api/v1/{shortUrl}`
 - **Method**: Get
 - **Response**: Return longURL for HTTP redirection (301 status code)
-  ```json
-  {
-    "url": "https://example.com/long/url/to/be/shortened"
-  }
 
 ### Algorithm for Generating Short URLs
+
+To generate short URLs, we use a unique ID generator to create an ID for each long URL. This ID is then encoded using base64 URL encoding. Two maps are utilized to store long and short URLs, with short URL keys in one map and long URL keys in the other.
+
+> **_NOTE:_**  This approach faces a concurrency issue due to simultaneous access to the maps storing URLs. To address this issue, database integration will be implemented in future phases.
