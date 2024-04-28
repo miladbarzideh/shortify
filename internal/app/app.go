@@ -1,6 +1,7 @@
 package app
 
 import (
+	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
 	"github.com/sirupsen/logrus"
 
@@ -20,6 +21,7 @@ func NewServer(logger *logrus.Logger) *Server {
 
 func (s *Server) Run() error {
 	app := echo.New()
+	app.Validator = &CustomValidator{validator: validator.New()}
 	s.mapHandlers(app)
 	return app.Start(":8080")
 }

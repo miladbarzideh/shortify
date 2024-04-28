@@ -29,7 +29,7 @@ func (h *Handler) CreateShortURL() echo.HandlerFunc {
 			return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 		}
 
-		if err := longURL.Validate(); err != nil {
+		if err := c.Validate(longURL); err != nil {
 			h.logger.Error(err.Error())
 			return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 		}
