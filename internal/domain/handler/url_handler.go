@@ -23,13 +23,18 @@ func NewHandler(logger *logrus.Logger, service *service.Service) *Handler {
 
 func (h *Handler) CreateShortURL() echo.HandlerFunc {
 	return func(c echo.Context) error {
-		longURL := c.FormValue("url")
-		shortURL, err := h.service.CreateShortURL(longURL)
+		longURL := new(URL)
+		if err := c.Bind(longURL); err != nil {
+			return c.String(http.StatusBadRequest, "bad request")
+		}
+		shortURL, err := h.service.CreateShortURL(longURL.Url)
 		if err != nil {
 			h.logger.Error("failed to create short url")
 		}
 
-		return c.String(http.StatusOK, shortURL)
+		return c.JSON(http.StatusOK, &URL{
+			Url: shortURL,
+		})
 	}
 }
 
@@ -38,9 +43,10 @@ func (h *Handler) RedirectToLongURL() echo.HandlerFunc {
 		shortURL := c.Param("url")
 		longURL, err := h.service.GetLongURL(shortURL)
 		if err != nil {
-			h.logger.Errorf("failed to find a relevant url: %s", shortURL)
+			h.logger.Errorf("failed to find a relevant url for: %s", shortURL)
+			return c.String(http.StatusNotFound, err.Error())
 		}
 
-		return c.String(http.StatusOK, longURL)
+		return c.Redirect(http.StatusMovedPermanently, longURL)
 	}
 }

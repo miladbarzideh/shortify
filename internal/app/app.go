@@ -32,5 +32,5 @@ func (s *Server) mapHandlers(app *echo.Echo) {
 	// Map routes
 	group := app.Group("/api/v1")
 	group.POST("/shorten", urlHandler.CreateShortURL())
-	group.GET(":url", urlHandler.RedirectToLongURL())
+	group.GET("/:url", urlHandler.RedirectToLongURL())
 }
