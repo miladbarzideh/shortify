@@ -48,8 +48,8 @@ func (h *Handler) CreateShortURL() echo.HandlerFunc {
 
 func (h *Handler) RedirectToLongURL() echo.HandlerFunc {
 	return func(c echo.Context) error {
-		shortURL := c.Param("url")
-		longURL, err := h.service.GetLongURL(shortURL)
+		shortCode := c.Param("url")
+		longURL, err := h.service.GetLongURL(shortCode)
 		if err != nil {
 			h.logger.Error(err.Error())
 			return echo.NewHTTPError(http.StatusNotFound, err.Error())
