@@ -4,7 +4,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"strconv"
-	"sync/atomic"
+	"sync"
 
 	"github.com/sirupsen/logrus"
 )
@@ -13,7 +13,8 @@ const baseURL = "http://localhost:8080/api/v1"
 
 var (
 	// counter simulates a unique ID generator, similar to database IDs
-	counter atomic.Uint64
+	counter uint
+	mutex   sync.Mutex
 )
 
 type Service struct {
@@ -31,13 +32,14 @@ func NewService(logger *logrus.Logger) *Service {
 }
 
 func (svc *Service) CreateShortURL(longURL string) (string, error) {
-	if shortUrl, exists := svc.longURLs[longURL]; exists {
-		return shortUrl, nil
+	mutex.Lock()
+	defer mutex.Unlock()
+	if shortCode, exists := svc.longURLs[longURL]; exists {
+		return buildShortURL(shortCode), nil
 	}
 
-	// To concurrency issue database integration can provide a solution
-	id := counter.Add(1)
-	shortCode := base64.URLEncoding.EncodeToString([]byte(strconv.Itoa(int(id))))
+	counter++
+	shortCode := base64.URLEncoding.EncodeToString([]byte(strconv.Itoa(int(counter))))
 	svc.shortURLs[shortCode] = longURL
 	svc.longURLs[longURL] = shortCode
 	shortURL := buildShortURL(shortCode)

@@ -31,5 +31,3 @@ In this phase, we will not use any databases and use an in-memory solution to st
 ### Algorithm for Generating Short URLs
 
 To generate short URLs, we use a unique ID generator to create an ID for each long URL. This ID is then encoded using base64 URL encoding. Two maps are utilized to store long and short URLs, with short URL keys in one map and long URL keys in the other.
-
-> **_NOTE:_**  This approach faces a concurrency issue due to simultaneous access to the maps storing URLs. To address this issue, database integration will be implemented in future phases.
