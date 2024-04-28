@@ -26,18 +26,18 @@ func (h *Handler) CreateShortURL() echo.HandlerFunc {
 		longURL := new(URL)
 		if err := c.Bind(longURL); err != nil {
 			h.logger.Error(err.Error())
-			return echo.NewHTTPError(http.StatusBadRequest, "bad request")
+			return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 		}
 
-		if !longURL.Validate() {
-			h.logger.Error("invalid url")
-			return echo.NewHTTPError(http.StatusBadRequest, "invalid url")
+		if err := longURL.Validate(); err != nil {
+			h.logger.Error(err.Error())
+			return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 		}
 
 		shortURL, err := h.service.CreateShortURL(longURL.Url)
 		if err != nil {
 			h.logger.Error(err.Error())
-			return echo.NewHTTPError(http.StatusInternalServerError, "failed to create short url")
+			return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 		}
 
 		return c.JSON(http.StatusOK, &URL{

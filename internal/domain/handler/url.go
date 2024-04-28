@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"errors"
 	"net/url"
 )
 
@@ -8,10 +9,10 @@ type URL struct {
 	Url string `json:"url"`
 }
 
-func (u URL) Validate() bool {
+func (u URL) Validate() error {
 	if _, err := url.ParseRequestURI(u.Url); err != nil {
-		return false
+		return errors.New("invalid url")
 	}
 
-	return true
+	return nil
 }
