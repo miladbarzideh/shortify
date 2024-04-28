@@ -27,11 +27,8 @@ func (s *Server) Run() error {
 }
 
 func (s *Server) mapHandlers(app *echo.Echo) {
-
 	urlService := service.NewService(s.logger)
 	urlHandler := handler.NewHandler(s.logger, urlService)
-
-	// Map routes
 	group := app.Group("/api/v1")
 	group.POST("/shorten", urlHandler.CreateShortURL())
 	group.GET("/:url", urlHandler.RedirectToLongURL())
