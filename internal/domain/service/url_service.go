@@ -2,7 +2,7 @@ package service
 
 import (
 	"encoding/base64"
-	"errors"
+	"fmt"
 	"strconv"
 	"sync/atomic"
 
@@ -29,8 +29,8 @@ func NewService(logger *logrus.Logger) *Service {
 }
 
 func (svc *Service) CreateShortURL(longURL string) (string, error) {
-	if v, exists := svc.longURLs[longURL]; exists {
-		return v, nil
+	if shortUrl, exists := svc.longURLs[longURL]; exists {
+		return shortUrl, nil
 	}
 
 	// To concurrency issue database integration can provide a solution
@@ -47,5 +47,5 @@ func (svc *Service) GetLongURL(shortURL string) (string, error) {
 		return longURL, nil
 	}
 
-	return "", errors.New("short url not found")
+	return "", fmt.Errorf("short url not found for %s", shortURL)
 }

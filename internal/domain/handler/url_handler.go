@@ -25,11 +25,19 @@ func (h *Handler) CreateShortURL() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		longURL := new(URL)
 		if err := c.Bind(longURL); err != nil {
-			return c.String(http.StatusBadRequest, "bad request")
+			h.logger.Error(err.Error())
+			return echo.NewHTTPError(http.StatusBadRequest, "bad request")
 		}
+
+		if !longURL.Validate() {
+			h.logger.Error("invalid url")
+			return echo.NewHTTPError(http.StatusBadRequest, "invalid url")
+		}
+
 		shortURL, err := h.service.CreateShortURL(longURL.Url)
 		if err != nil {
-			h.logger.Error("failed to create short url")
+			h.logger.Error(err.Error())
+			return echo.NewHTTPError(http.StatusInternalServerError, "failed to create short url")
 		}
 
 		return c.JSON(http.StatusOK, &URL{
@@ -43,8 +51,8 @@ func (h *Handler) RedirectToLongURL() echo.HandlerFunc {
 		shortURL := c.Param("url")
 		longURL, err := h.service.GetLongURL(shortURL)
 		if err != nil {
-			h.logger.Errorf("failed to find a relevant url for: %s", shortURL)
-			return c.String(http.StatusNotFound, err.Error())
+			h.logger.Error(err.Error())
+			return echo.NewHTTPError(http.StatusNotFound, err.Error())
 		}
 
 		return c.Redirect(http.StatusMovedPermanently, longURL)
