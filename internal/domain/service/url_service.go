@@ -61,7 +61,7 @@ func (svc *Service) GetLongURL(shortCode string) (string, error) {
 		return longURL, nil
 	}
 
-	return "", fmt.Errorf("short url not found for %s", shortURL)
+	return "", fmt.Errorf("long url not found for %s", shortURL)
 }
 
 func buildShortURL(shortCode string) string {
