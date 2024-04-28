@@ -8,7 +8,7 @@ In this phase, we will not use any databases and use an in-memory solution to st
 
 ### Endpoint: Create Short URL
 
-- **URL**: `/api/v1/shorten`
+- **URL**: `/api/v1/urls/shorten`
 - **Method**: POST
 - **Request Body**: JSON object with the following structure:
   ```json
@@ -24,7 +24,7 @@ In this phase, we will not use any databases and use an in-memory solution to st
 
 ### Endpoint: Redirect
 
-- **URL**: `/api/v1/{shortUrl}`
+- **URL**: `/api/v1/urls/{shortUrl}`
 - **Method**: Get
 - **Response**: Return longURL for HTTP redirection (301 status code)
 

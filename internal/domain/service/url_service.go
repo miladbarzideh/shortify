@@ -9,7 +9,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const baseURL = "http://localhost:8080/api/v1"
+const baseURL = "http://localhost:8080/api/v1/urls"
 
 var (
 	// counter simulates a unique ID generator, similar to database IDs
