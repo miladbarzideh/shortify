@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/pjebs/optimus-go"
 	"github.com/sirupsen/logrus"
 )
 
@@ -17,13 +18,17 @@ var (
 
 type Service struct {
 	logger    *logrus.Logger
+	o         optimus.Optimus
 	shortURLs map[string]string
 	longURLs  map[string]string
 }
 
 func NewService(logger *logrus.Logger) *Service {
+	// This package utilizes Knuth's Hashing Algorithm to transform your internal ids into another number to hide it from the public.
+	o := optimus.New(1580030173, 59260789, 1163945558)
 	return &Service{
 		logger:    logger,
+		o:         o,
 		shortURLs: make(map[string]string),
 		longURLs:  make(map[string]string),
 	}
@@ -37,7 +42,7 @@ func (svc *Service) CreateShortURL(longURL string) (string, error) {
 	}
 
 	counter++
-	shortCode := Base62Encode(int(counter))
+	shortCode := Base62Encode(svc.o.Encode(uint64(counter)))
 	svc.shortURLs[shortCode] = longURL
 	svc.longURLs[longURL] = shortCode
 	shortURL := buildShortURL(shortCode)

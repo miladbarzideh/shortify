@@ -6,7 +6,7 @@ import (
 
 const base62Charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
-func Base62Encode(n int) string {
+func Base62Encode(n uint64) string {
 	var encoding strings.Builder
 	for n > 0 {
 		encoding.WriteByte(base62Charset[n%62])

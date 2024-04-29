@@ -30,4 +30,4 @@ In this phase, we will not use any databases and use an in-memory solution to st
 
 ### Algorithm for Generating Short URLs
 
-To generate short URLs, we use a unique ID generator to create an ID for each long URL. This ID is then encoded using base64 URL encoding. Two maps are utilized to store long and short URLs, with short URL keys in one map and long URL keys in the other.
+To generate short URLs, we use a unique ID generator to create an ID for each long URL. This ID is then transformed into another number to hide it from the public by Optimus package, and encoded using base62 encoding. Two maps are utilized to store long and short URLs, with short URL keys in one map and long URL keys in the other.
