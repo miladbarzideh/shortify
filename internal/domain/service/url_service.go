@@ -1,9 +1,7 @@
 package service
 
 import (
-	"encoding/base64"
 	"fmt"
-	"strconv"
 	"sync"
 
 	"github.com/sirupsen/logrus"
@@ -39,7 +37,7 @@ func (svc *Service) CreateShortURL(longURL string) (string, error) {
 	}
 
 	counter++
-	shortCode := base64.URLEncoding.EncodeToString([]byte(strconv.Itoa(int(counter))))
+	shortCode := Base62Encode(int(counter))
 	svc.shortURLs[shortCode] = longURL
 	svc.longURLs[longURL] = shortCode
 	shortURL := buildShortURL(shortCode)
