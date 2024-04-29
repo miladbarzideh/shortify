@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/pjebs/optimus-go"
 	"github.com/sirupsen/logrus"
 )
 
@@ -18,7 +17,6 @@ var (
 
 type Service struct {
 	logger    *logrus.Logger
-	o         optimus.Optimus
 	shortURLs map[string]string
 	longURLs  map[string]string
 }
@@ -39,7 +37,7 @@ func (svc *Service) CreateShortURL(longURL string) (string, error) {
 	}
 
 	counter++
-	shortCode := Base62EncodeWithObfuscatedID(svc.o.Encode(uint64(counter)))
+	shortCode := Base62EncodeWithObfuscatedID(uint64(counter))
 	svc.shortURLs[shortCode] = longURL
 	svc.longURLs[longURL] = shortCode
 	shortURL := buildShortURL(shortCode)
