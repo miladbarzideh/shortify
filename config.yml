@@ -1,0 +1,16 @@
+server:
+  app_version: 0.0.1
+  address: localhost:8513
+  port: 8513
+  log_level: debug
+
+postgres:
+  host: localhost
+  port: 5432
+  user: root
+  password: root
+  db_name: shortify
+  log_level: error
+
+shortener:
+  code_length: 5

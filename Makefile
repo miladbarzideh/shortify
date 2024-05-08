@@ -4,7 +4,7 @@
 # Main
 
 run:
-	go run ./cmd/shortify/main.go
+	go run main.go serve
 
 build:
-	go build ./cmd/shortify/main.go
+	go build -o shortify ./main.go
