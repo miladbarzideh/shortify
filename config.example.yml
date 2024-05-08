@@ -1,0 +1,21 @@
+# Example configuration file for URL shortener application
+
+# Server settings
+server:
+  app_version: 0.0.1         # Application version
+  address: localhost:8513    # Server address
+  port: 8513                 # Server port number
+  log_level: debug           # Log level for the application (options: debug, info, warn, error)
+
+# PostgresSQL database settings
+postgres:
+  host: localhost       # Database host address
+  port: 5432            # Database port number
+  user: user            # Database user
+  password: password    # Database password
+  db_name: shortify     # Database name
+  log_level: error      # Log level to show database log level (options: silent, error, warn, info)
+
+# URL shortener settings
+shortener:
+  code_length: 7        # Maximum length of generated short code, 62^7 =~ 3.5 trillion
