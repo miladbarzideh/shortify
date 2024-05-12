@@ -9,7 +9,7 @@ import (
 	"gorm.io/gorm/logger"
 )
 
-func NewConnection(cfg *Config) (*gorm.DB, error) {
+func NewPostgresConnection(cfg *Config) (*gorm.DB, error) {
 	db, err := gorm.Open(postgres.Open(buildDSN(cfg)), &gorm.Config{
 		Logger: logger.Default.LogMode(mapToDBLogLevel(cfg.Postgres.LogLevel)),
 	})

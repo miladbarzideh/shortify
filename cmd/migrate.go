@@ -5,7 +5,7 @@ import (
 	"github.com/spf13/cobra"
 	"gorm.io/gorm"
 
-	"github.com/miladbarzideh/shortify/domain"
+	"github.com/miladbarzideh/shortify/internal/model"
 )
 
 var cmdMigrate = func(log *logrus.Logger, postgresDb *gorm.DB) *cobra.Command {
@@ -13,7 +13,7 @@ var cmdMigrate = func(log *logrus.Logger, postgresDb *gorm.DB) *cobra.Command {
 		Use:   "migrate",
 		Short: "Migrate the database",
 		Run: func(cmd *cobra.Command, args []string) {
-			if err := postgresDb.AutoMigrate(&domain.URL{}); err != nil {
+			if err := postgresDb.AutoMigrate(&model.URL{}); err != nil {
 				log.Fatalf("failed to migrate database: %v", err)
 			}
 		},

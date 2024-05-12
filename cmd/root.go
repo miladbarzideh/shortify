@@ -19,12 +19,17 @@ func Execute() {
 	}
 
 	log := infra.InitLogger(cfg)
-	postgresDb, err := infra.NewConnection(cfg)
+	postgresDb, err := infra.NewPostgresConnection(cfg)
 	if err != nil {
 		log.Fatal("database connection failed")
 	}
 
-	cmdServe := cmdServer(cfg, log, postgresDb)
+	redis, err := infra.NewRedisClient(cfg)
+	if err != nil {
+		log.Fatal("redis client failed")
+	}
+
+	cmdServe := cmdServer(cfg, log, postgresDb, redis)
 	cmdServe.Flags().IntP("port", "p", 8080,
 		"Optional port number.Default value will be read from the config file")
 	rooCmd.AddCommand(cmdServe)
