@@ -3,47 +3,53 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
+	"github.com/redis/go-redis/v9"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"gorm.io/gorm"
 
-	"github.com/miladbarzideh/shortify/domain"
 	"github.com/miladbarzideh/shortify/infra"
+	"github.com/miladbarzideh/shortify/internal/controller"
+	"github.com/miladbarzideh/shortify/internal/repository"
+	"github.com/miladbarzideh/shortify/internal/service"
+	"github.com/miladbarzideh/shortify/pkg/generator"
 )
 
 type Server struct {
 	logger *logrus.Logger
 	cfg    *infra.Config
 	db     *gorm.DB
+	redis  *redis.Client
 }
 
-func NewServer(logger *logrus.Logger, cfg *infra.Config, db *gorm.DB) *Server {
+func NewServer(logger *logrus.Logger, cfg *infra.Config, db *gorm.DB, redis *redis.Client) *Server {
 	return &Server{
 		logger: logger,
 		cfg:    cfg,
 		db:     db,
+		redis:  redis,
 	}
 }
 
 func (s *Server) Run() error {
 	app := echo.New()
-	app.Validator = &CustomValidator{validator: validator.New()}
 	s.mapHandlers(app)
 	return app.Start(fmt.Sprintf(":%s", s.cfg.Server.Port))
 }
 
 func (s *Server) mapHandlers(app *echo.Echo) {
-	urlRepository := domain.NewRepository(s.logger, s.db)
-	urlService := domain.NewService(s.logger, s.cfg, urlRepository)
-	urlHandler := domain.NewHandler(s.logger, s.cfg, urlService)
+	urlRepository := repository.NewRepository(s.logger, s.db)
+	urlCacheRepository := repository.NewCacheRepository(s.logger, s.redis)
+	gen := generator.NewGenerator()
+	urlService := service.NewService(s.logger, s.cfg, urlRepository, urlCacheRepository, gen)
+	urlHandler := controller.NewHandler(s.logger, s.cfg, urlService)
 	groupV1 := app.Group("/api/v1")
 	groupV1.POST("/urls/shorten", urlHandler.CreateShortURL())
 	groupV1.GET("/urls/:url", urlHandler.RedirectToLongURL())
 }
 
-var cmdServer = func(cfg *infra.Config, log *logrus.Logger, postgresDb *gorm.DB) *cobra.Command {
+var cmdServer = func(cfg *infra.Config, log *logrus.Logger, postgresDb *gorm.DB, redis *redis.Client) *cobra.Command {
 	return &cobra.Command{
 		Use:   "serve",
 		Short: "Start the URL shortener app",
@@ -54,21 +60,10 @@ var cmdServer = func(cfg *infra.Config, log *logrus.Logger, postgresDb *gorm.DB)
 				cfg.Server.Port = cmd.Flag("port").Value.String()
 			}
 
-			server := NewServer(log, cfg, postgresDb)
+			server := NewServer(log, cfg, postgresDb, redis)
 			if server.Run() != nil {
 				log.Fatal("failed to start the cmd")
 			}
 		},
 	}
-}
-
-type CustomValidator struct {
-	validator *validator.Validate
-}
-
-func (cv *CustomValidator) Validate(i interface{}) error {
-	if err := cv.validator.Struct(i); err != nil {
-		return err
-	}
-	return nil
 }

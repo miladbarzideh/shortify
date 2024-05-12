@@ -9,6 +9,7 @@ import (
 type Config struct {
 	Server    Server    `mapstructure:"server"`
 	Postgres  Postgres  `mapstructure:"postgres"`
+	Redis     Redis     `mapstructure:"redis"`
 	Shortener Shortener `mapstructure:"shortener"`
 }
 
@@ -26,6 +27,11 @@ type Postgres struct {
 	Password string `mapstructure:"password"`
 	DBName   string `mapstructure:"db_name"`
 	LogLevel string `mapstructure:"log_level"`
+}
+
+type Redis struct {
+	Address  string `mapstructure:"address"`
+	Password string `mapstructure:"password"`
 }
 
 type Shortener struct {

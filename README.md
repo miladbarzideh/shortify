@@ -1,10 +1,20 @@
 ## Introduction
 
-The goal of this project is to implement a simple URL shortener with two endpoints using the Go programming language, Echo framework, Gorm, Cobra and Logrus for logging. [WIP]
+The goal of this project is to implement a simple URL shortener with two endpoints using the Go programming language.
+### Technologies Used
+
+- [Echo framework](https://echo.labstack.com/): High performance, extensible, minimalist Go web framework
+- [Logrus](https://github.com/sirupsen/logrus): Structured, pluggable logging for Go
+- [Gorm](https://gorm.io/index.html): The fantastic ORM library for Golang
+- [Viper](https://github.com/spf13/viper): Complete configuration solution for Go applications
+- [Cobra](https://cobra.dev/): A Framework for Modern CLI Apps in Go
+- [Go Redis](https://redis.uptrace.dev/): Golang Redis client for Redis Server and Redis Cluster
+- Testing: [testify](https://github.com/stretchr/testify), [redismock](https://github.com/go-redis/redismock), [go-sql-mock](https://github.com/DATA-DOG/go-sqlmock)
+
 
 ### Running the Application
 
-1. Build the project
+Build the project
 ```sh
 make build
 ```
@@ -20,9 +30,9 @@ To migrate the database and create all tables if they do not exist, use the migr
 ./shortify migrate
 ```
 
-## Implementation Details
+### Usage
 
-### Endpoint: Create Short URL
+Endpoint: Create Short URL
 
 - **URL**: `/api/v1/urls/shorten`
 - **Method**: POST
@@ -38,7 +48,7 @@ To migrate the database and create all tables if they do not exist, use the migr
   "url": "http://short.url/abcdef"
   }
 
-### Endpoint: Redirect
+Endpoint: Redirect
 
 - **URL**: `/api/v1/urls/{shortUrl}`
 - **Method**: Get

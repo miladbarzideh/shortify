@@ -12,5 +12,9 @@ postgres:
   db_name: shortify
   log_level: error
 
+redis:
+  address: localhost:6379
+  password:
+
 shortener:
   code_length: 5

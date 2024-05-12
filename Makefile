@@ -8,3 +8,9 @@ run:
 
 build:
 	go build -o shortify ./main.go
+
+test:
+	go test -cover ./...
+
+bench:
+	go test -bench=. ./...

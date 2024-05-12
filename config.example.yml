@@ -16,6 +16,11 @@ postgres:
   db_name: shortify     # Database name
   log_level: error      # Log level to show database log level (options: silent, error, warn, info)
 
+# Redis database setting
+redis:
+  address: localhost:6379     # host:port address
+  password: password          # Redis password
+
 # URL shortener settings
 shortener:
   code_length: 7        # Maximum length of generated short code, 62^7 =~ 3.5 trillion
