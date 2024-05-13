@@ -11,18 +11,15 @@ import (
 type GeneratorTestSuite struct {
 	suite.Suite
 	generator Generator
-	patches   *gomonkey.Patches
 }
 
 func (suite *GeneratorTestSuite) SetupTest() {
-	suite.patches = gomonkey.ApplyFunc(time.Now, func() time.Time {
+	patches := gomonkey.ApplyFunc(time.Now, func() time.Time {
 		return time.Date(2024, time.May, 11, 19, 47, 0, 0, time.UTC)
 	})
-	suite.generator = NewGenerator()
-}
+	defer patches.Reset()
 
-func (suite *GeneratorTestSuite) TearDownTest() {
-	suite.patches.Reset()
+	suite.generator = NewGenerator()
 }
 
 func (suite *GeneratorTestSuite) TestGenerator_GenerateShortURLCode_Success() {

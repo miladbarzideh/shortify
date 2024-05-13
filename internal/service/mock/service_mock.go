@@ -24,3 +24,8 @@ func (m *Service) GetLongURL(ctx context.Context, shortCode string) (string, err
 func (m *Service) BuildShortURL(shortCode string) string {
 	return fmt.Sprintf("localhost:8513/api/v1/urls/%s", shortCode)
 }
+
+func (m *Service) CreateShortURLWithRetries(longURL string, shortCode string) error {
+	args := m.Called(longURL, shortCode)
+	return args.Error(0)
+}

@@ -7,10 +7,11 @@ import (
 )
 
 type Config struct {
-	Server    Server    `mapstructure:"server"`
-	Postgres  Postgres  `mapstructure:"postgres"`
-	Redis     Redis     `mapstructure:"redis"`
-	Shortener Shortener `mapstructure:"shortener"`
+	Server     Server     `mapstructure:"server"`
+	Postgres   Postgres   `mapstructure:"postgres"`
+	Redis      Redis      `mapstructure:"redis"`
+	Shortener  Shortener  `mapstructure:"shortener"`
+	WorkerPool WorkerPool `mapstructure:"worker_pool"`
 }
 
 type Server struct {
@@ -36,6 +37,11 @@ type Redis struct {
 
 type Shortener struct {
 	CodeLength int `mapstructure:"code_length"`
+}
+
+type WorkerPool struct {
+	WorkerCount int `mapstructure:"worker_count"`
+	QueueSize   int `mapstructure:"queue_size"`
 }
 
 func Load() (config *Config, err error) {

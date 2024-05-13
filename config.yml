@@ -18,3 +18,7 @@ redis:
 
 shortener:
   code_length: 5
+
+worker_pool:
+  worker_count: 10
+  queue_size: 5

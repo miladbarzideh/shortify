@@ -1,7 +1,13 @@
 package cmd
 
 import (
+	"context"
+	"errors"
 	"fmt"
+	"net/http"
+	"os"
+	"os/signal"
+	"time"
 
 	"github.com/labstack/echo/v4"
 	"github.com/redis/go-redis/v9"
@@ -14,6 +20,7 @@ import (
 	"github.com/miladbarzideh/shortify/internal/repository"
 	"github.com/miladbarzideh/shortify/internal/service"
 	"github.com/miladbarzideh/shortify/pkg/generator"
+	"github.com/miladbarzideh/shortify/pkg/worker"
 )
 
 type Server struct {
@@ -21,28 +28,46 @@ type Server struct {
 	cfg    *infra.Config
 	db     *gorm.DB
 	redis  *redis.Client
+	wp     worker.Pool
 }
 
-func NewServer(logger *logrus.Logger, cfg *infra.Config, db *gorm.DB, redis *redis.Client) *Server {
+func NewServer(logger *logrus.Logger, cfg *infra.Config, db *gorm.DB, redis *redis.Client, wp worker.Pool) *Server {
 	return &Server{
 		logger: logger,
 		cfg:    cfg,
 		db:     db,
 		redis:  redis,
+		wp:     wp,
 	}
 }
 
-func (s *Server) Run() error {
+func (s *Server) Run() {
 	app := echo.New()
 	s.mapHandlers(app)
-	return app.Start(fmt.Sprintf(":%s", s.cfg.Server.Port))
+	// https://echo.labstack.com/docs/cookbook/graceful-shutdown
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+	defer stop()
+	go func() {
+		address := fmt.Sprintf(":%s", s.cfg.Server.Port)
+		if err := app.Start(address); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			s.logger.Fatal("shutting down the server")
+		}
+	}()
+
+	<-ctx.Done()
+	s.wp.StopAndWait()
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	if err := app.Shutdown(ctx); err != nil {
+		s.logger.Fatal(err)
+	}
 }
 
 func (s *Server) mapHandlers(app *echo.Echo) {
 	urlRepository := repository.NewRepository(s.logger, s.db)
 	urlCacheRepository := repository.NewCacheRepository(s.logger, s.redis)
 	gen := generator.NewGenerator()
-	urlService := service.NewService(s.logger, s.cfg, urlRepository, urlCacheRepository, gen)
+	urlService := service.NewService(s.logger, s.cfg, urlRepository, urlCacheRepository, gen, s.wp)
 	urlHandler := controller.NewHandler(s.logger, s.cfg, urlService)
 	groupV1 := app.Group("/api/v1")
 	groupV1.POST("/urls/shorten", urlHandler.CreateShortURL())
@@ -60,10 +85,9 @@ var cmdServer = func(cfg *infra.Config, log *logrus.Logger, postgresDb *gorm.DB,
 				cfg.Server.Port = cmd.Flag("port").Value.String()
 			}
 
-			server := NewServer(log, cfg, postgresDb, redis)
-			if server.Run() != nil {
-				log.Fatal("failed to start the cmd")
-			}
+			wp := worker.NewWorkerPool(log, cfg.WorkerPool.WorkerCount, cfg.WorkerPool.QueueSize)
+			server := NewServer(log, cfg, postgresDb, redis, wp)
+			server.Run()
 		},
 	}
 }
