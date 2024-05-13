@@ -22,3 +22,10 @@ shortener:
 worker_pool:
   worker_count: 10
   queue_size: 5
+
+trace:
+  enabled: true
+  jaeger_host: localhost
+  jaeger_port: 6831
+  service_namespace_key: shortify_namespace
+  service_name_key: shortify

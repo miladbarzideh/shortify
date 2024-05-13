@@ -12,6 +12,7 @@ type Config struct {
 	Redis      Redis      `mapstructure:"redis"`
 	Shortener  Shortener  `mapstructure:"shortener"`
 	WorkerPool WorkerPool `mapstructure:"worker_pool"`
+	Trace      Trace      `mapstructure:"trace"`
 }
 
 type Server struct {
@@ -42,6 +43,14 @@ type Shortener struct {
 type WorkerPool struct {
 	WorkerCount int `mapstructure:"worker_count"`
 	QueueSize   int `mapstructure:"queue_size"`
+}
+
+type Trace struct {
+	Enable              bool   `mapstructure:"enable"`
+	JaegerHost          string `mapstructure:"jaeger_host"`
+	JaegerPort          string `mapstructure:"jaeger_port"`
+	ServiceNameSpaceKey string `mapstructure:"service_namespace_key"`
+	ServiceNameKey      string `mapstructure:"service_name_key"`
 }
 
 func Load() (config *Config, err error) {

@@ -29,3 +29,11 @@ shortener:
 worker_pool:
   worker_count: 10          # Number of workers
   queue_size: 5             # Size of queue (channel), 0 for unbuffered channel
+
+# Open telemetry settings
+trace:
+  enabled: true           # Enable or disable tracing
+  jaeger_host: localhost  # Jaeger host (tracing provider)
+  jaeger_port: 6831       # Jaeger port
+  service_namespace_key: shortify_namespace     # Service namespace key attribute
+  service_name_key: shortify                    # Service name key
