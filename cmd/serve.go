@@ -24,20 +24,29 @@ import (
 )
 
 type Server struct {
-	logger *logrus.Logger
-	cfg    *infra.Config
-	db     *gorm.DB
-	redis  *redis.Client
-	wp     worker.Pool
+	logger    *logrus.Logger
+	cfg       *infra.Config
+	db        *gorm.DB
+	redis     *redis.Client
+	wp        worker.Pool
+	telemetry *infra.Telemetry
 }
 
-func NewServer(logger *logrus.Logger, cfg *infra.Config, db *gorm.DB, redis *redis.Client, wp worker.Pool) *Server {
+func NewServer(
+	logger *logrus.Logger,
+	cfg *infra.Config,
+	db *gorm.DB,
+	redis *redis.Client,
+	wp worker.Pool,
+	telemetry *infra.Telemetry,
+) *Server {
 	return &Server{
-		logger: logger,
-		cfg:    cfg,
-		db:     db,
-		redis:  redis,
-		wp:     wp,
+		logger:    logger,
+		cfg:       cfg,
+		db:        db,
+		redis:     redis,
+		wp:        wp,
+		telemetry: telemetry,
 	}
 }
 
@@ -64,11 +73,11 @@ func (s *Server) Run() {
 }
 
 func (s *Server) mapHandlers(app *echo.Echo) {
-	urlRepository := repository.NewRepository(s.logger, s.db)
-	urlCacheRepository := repository.NewCacheRepository(s.logger, s.redis)
+	urlRepository := repository.NewRepository(s.logger, s.db, s.telemetry.TraceProvider.Tracer("urlRepo"))
+	urlCacheRepository := repository.NewCacheRepository(s.logger, s.redis, s.telemetry.TraceProvider.Tracer("urlCacheRepo"))
 	gen := generator.NewGenerator()
 	urlService := service.NewService(s.logger, s.cfg, urlRepository, urlCacheRepository, gen, s.wp)
-	urlHandler := controller.NewHandler(s.logger, s.cfg, urlService)
+	urlHandler := controller.NewHandler(s.logger, s.cfg, urlService, s.telemetry.TraceProvider.Tracer("urlHandler"))
 	groupV1 := app.Group("/api/v1")
 	groupV1.POST("/urls/shorten", urlHandler.CreateShortURL())
 	groupV1.GET("/urls/:url", urlHandler.RedirectToLongURL())
@@ -86,7 +95,12 @@ var cmdServer = func(cfg *infra.Config, log *logrus.Logger, postgresDb *gorm.DB,
 			}
 
 			wp := worker.NewWorkerPool(log, cfg.WorkerPool.WorkerCount, cfg.WorkerPool.QueueSize)
-			server := NewServer(log, cfg, postgresDb, redis, wp)
+			telemetry, err := infra.NewTelemetry(cfg)
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			server := NewServer(log, cfg, postgresDb, redis, wp, telemetry)
 			server.Run()
 		},
 	}
