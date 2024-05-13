@@ -11,7 +11,7 @@ type Service struct {
 	mock.Mock
 }
 
-func (m *Service) CreateShortURL(url string) (string, error) {
+func (m *Service) CreateShortURL(ctx context.Context, url string) (string, error) {
 	args := m.Called(url)
 	return args.String(0), args.Error(1)
 }

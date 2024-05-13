@@ -11,6 +11,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/suite"
 
+	"github.com/miladbarzideh/shortify/infra"
 	"github.com/miladbarzideh/shortify/internal/model"
 )
 
@@ -22,7 +23,8 @@ type URLCacheRepositoryTestSuite struct {
 
 func (suite *URLCacheRepositoryTestSuite) SetupTest() {
 	db, mock := redismock.NewClientMock()
-	suite.cacheRepo = NewCacheRepository(logrus.New(), db)
+	tracer := infra.NOOPTelemetry.TraceProvider.Tracer("")
+	suite.cacheRepo = NewCacheRepository(logrus.New(), db, tracer)
 	suite.cacheMock = mock
 }
 

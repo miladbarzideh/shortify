@@ -31,7 +31,8 @@ type URLHandlerTestSuite struct {
 
 func (suite *URLHandlerTestSuite) SetupTest() {
 	suite.mockService = new(mock.Service)
-	suite.handler = NewHandler(logrus.New(), &infra.Config{}, suite.mockService)
+	tracer := infra.NOOPTelemetry.TraceProvider.Tracer("")
+	suite.handler = NewHandler(logrus.New(), &infra.Config{}, suite.mockService, tracer)
 }
 
 func (suite *URLHandlerTestSuite) TestURLHandler_CreateShortURL_Success() {

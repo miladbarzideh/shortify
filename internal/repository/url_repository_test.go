@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"context"
 	"database/sql/driver"
 	"errors"
 	"regexp"
@@ -13,6 +14,7 @@ import (
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 
+	"github.com/miladbarzideh/shortify/infra"
 	"github.com/miladbarzideh/shortify/internal/model"
 )
 
@@ -38,7 +40,8 @@ func (suite *URLRepositoryTestSuite) SetupTest() {
 		Conn: db,
 	}), &gorm.Config{})
 	require.NoError(err)
-	suite.repo = NewRepository(logrus.New(), gormDB)
+	tracer := infra.NOOPTelemetry.TraceProvider.Tracer("")
+	suite.repo = NewRepository(logrus.New(), gormDB, tracer)
 	suite.mock = mock
 }
 
@@ -125,7 +128,7 @@ func (suite *URLRepositoryTestSuite) TestURLRepository_FindByShortCode_Success()
 		rows := sqlmock.NewRows([]string{"id", "long_url", "short_code", "created_at", "updated_at"}).
 			AddRow(tc.expectedURL.ID, tc.expectedURL.LongURL, tc.expectedURL.ShortCode, tc.expectedURL.CreatedAt, tc.expectedURL.UpdatedAt)
 		suite.mock.ExpectQuery(query).WithArgs(tc.input, 1).WillReturnRows(rows)
-		actualUrl, err := suite.repo.FindByShortCode(tc.input)
+		actualUrl, err := suite.repo.FindByShortCode(context.TODO(), tc.input)
 
 		require.NoError(err)
 		require.Equal(actualUrl.ShortCode, tc.expectedURL.ShortCode)
@@ -148,7 +151,7 @@ func (suite *URLRepositoryTestSuite) TestURLRepository_FindByShortCode_Failure()
 	for _, tc := range testCases {
 		query := `SELECT \* FROM "urls" (.+)`
 		suite.mock.ExpectQuery(query).WithArgs(tc.input, 1).WillReturnError(gorm.ErrRecordNotFound)
-		_, err := suite.repo.FindByShortCode(tc.input)
+		_, err := suite.repo.FindByShortCode(context.TODO(), tc.input)
 
 		require.Error(err)
 		require.Equal(gorm.ErrRecordNotFound, err)
