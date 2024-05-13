@@ -82,6 +82,10 @@ func newPropagator() propagation.TextMapPropagator {
 }
 
 func newTraceProvider(cfg Trace) (traceProvider trace.TracerProvider, err error) {
+	if !cfg.Enabled {
+		return NOOPTelemetry.TraceProvider, nil
+	}
+
 	exporter, err := jaeger.New(
 		jaeger.WithAgentEndpoint(jaeger.WithAgentHost(cfg.JaegerHost), jaeger.WithAgentPort(cfg.JaegerPort)),
 	)

@@ -46,7 +46,7 @@ type WorkerPool struct {
 }
 
 type Trace struct {
-	Enable              bool   `mapstructure:"enable"`
+	Enabled             bool   `mapstructure:"enabled"`
 	JaegerHost          string `mapstructure:"jaeger_host"`
 	JaegerPort          string `mapstructure:"jaeger_port"`
 	ServiceNameSpaceKey string `mapstructure:"service_namespace_key"`
