@@ -6,11 +6,20 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/sirupsen/logrus"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/miladbarzideh/shortify/infra"
 	"github.com/miladbarzideh/shortify/internal/model"
 	"github.com/miladbarzideh/shortify/internal/service"
 	"github.com/miladbarzideh/shortify/pkg/generator"
+)
+
+const (
+	msgInvalidURLError       = "invalid URL"
+	msgInvalidShortCodeError = "invalid short code"
+	msgInternalServerError   = "internal server error"
 )
 
 type URLHandler interface {
@@ -22,33 +31,44 @@ type handler struct {
 	logger  *logrus.Logger
 	cfg     *infra.Config
 	service service.URLService
+	tracer  trace.Tracer
 }
 
-func NewHandler(logger *logrus.Logger, cfg *infra.Config, service service.URLService) URLHandler {
+func NewHandler(logger *logrus.Logger, cfg *infra.Config, service service.URLService, tracer trace.Tracer) URLHandler {
 	return &handler{
 		logger:  logger,
 		cfg:     cfg,
 		service: service,
+		tracer:  tracer,
 	}
 }
 
 func (h *handler) CreateShortURL() echo.HandlerFunc {
 	return func(c echo.Context) error {
+		ctx, span := h.tracer.Start(c.Request().Context(), "urlHandler.create")
+		defer span.End()
 		longURL := new(model.URLData)
 		if err := c.Bind(longURL); err != nil {
 			h.logger.Error(err.Error())
+			span.RecordError(err)
+			span.SetStatus(codes.Error, err.Error())
 			return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 		}
 
 		if !longURL.Validate() {
-			h.logger.Error("invalid url")
-			return echo.NewHTTPError(http.StatusBadRequest, "invalid url")
+			h.logger.Error(msgInvalidURLError)
+			span.RecordError(errors.New(msgInvalidURLError))
+			span.SetStatus(codes.Error, msgInvalidURLError)
+			return echo.NewHTTPError(http.StatusBadRequest, msgInvalidURLError)
 		}
 
-		shortURL, err := h.service.CreateShortURL(longURL.URL)
+		span.SetAttributes(attribute.String("url", longURL.URL))
+		shortURL, err := h.service.CreateShortURL(ctx, longURL.URL)
 		if err != nil {
 			h.logger.Error(err.Error())
-			return echo.NewHTTPError(http.StatusInternalServerError, "Something went wrong")
+			span.RecordError(err)
+			span.SetStatus(codes.Error, err.Error())
+			return echo.NewHTTPError(http.StatusInternalServerError, msgInternalServerError)
 		}
 
 		return c.JSON(http.StatusOK, &model.URLData{
@@ -59,21 +79,26 @@ func (h *handler) CreateShortURL() echo.HandlerFunc {
 
 func (h *handler) RedirectToLongURL() echo.HandlerFunc {
 	return func(c echo.Context) error {
-		ctx := c.Request().Context()
+		ctx, span := h.tracer.Start(c.Request().Context(), "urlHandler.redirect")
+		defer span.End()
 		shortCode := c.Param("url")
 		if !generator.IsValidBase62(shortCode) {
-			h.logger.Errorf("Invalid short code: %s", shortCode)
-			return echo.NewHTTPError(http.StatusBadRequest, "Invalid short code")
+			h.logger.Errorf("%s: %s", msgInvalidShortCodeError, shortCode)
+			span.RecordError(errors.New(msgInvalidShortCodeError))
+			span.SetStatus(codes.Error, msgInvalidShortCodeError)
+			return echo.NewHTTPError(http.StatusBadRequest, msgInvalidShortCodeError)
 		}
 
 		longURL, err := h.service.GetLongURL(ctx, shortCode)
 		if err != nil {
 			h.logger.Error(err.Error())
+			span.RecordError(err)
+			span.SetStatus(codes.Error, err.Error())
 			if errors.Is(err, service.ErrURLNotFound) {
 				return echo.NewHTTPError(http.StatusNotFound, err.Error())
 			}
 
-			return echo.NewHTTPError(http.StatusInternalServerError, "Something went wrong")
+			return echo.NewHTTPError(http.StatusInternalServerError, msgInternalServerError)
 		}
 
 		return c.Redirect(http.StatusMovedPermanently, longURL)

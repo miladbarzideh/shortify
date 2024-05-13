@@ -21,7 +21,7 @@ var (
 const maxRetries = 5
 
 type URLService interface {
-	CreateShortURL(url string) (string, error)
+	CreateShortURL(ctx context.Context, url string) (string, error)
 	GetLongURL(ctx context.Context, shortCode string) (string, error)
 	BuildShortURL(shortCode string) string
 	CreateShortURLWithRetries(longURL string, shortCode string) error
@@ -54,7 +54,7 @@ func NewService(
 	}
 }
 
-func (svc *service) CreateShortURL(longURL string) (string, error) {
+func (svc *service) CreateShortURL(ctx context.Context, longURL string) (string, error) {
 	shortCode := svc.gen.GenerateShortURLCode(svc.cfg.Shortener.CodeLength)
 	if err := svc.wp.Submit(func() {
 		if err := svc.CreateShortURLWithRetries(longURL, shortCode); err != nil {
@@ -101,7 +101,7 @@ func (svc *service) GetLongURL(ctx context.Context, shortCode string) (string, e
 		return url.LongURL, nil
 	}
 
-	url, err := svc.repo.FindByShortCode(shortCode)
+	url, err := svc.repo.FindByShortCode(ctx, shortCode)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return "", ErrURLNotFound

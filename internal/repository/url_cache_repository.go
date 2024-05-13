@@ -8,6 +8,7 @@ import (
 
 	"github.com/redis/go-redis/v9"
 	"github.com/sirupsen/logrus"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/miladbarzideh/shortify/internal/model"
 )
@@ -26,16 +27,20 @@ type URLCacheRepository interface {
 type cacheRepository struct {
 	logger *logrus.Logger
 	cache  *redis.Client
+	tracer trace.Tracer
 }
 
-func NewCacheRepository(logger *logrus.Logger, redis *redis.Client) URLCacheRepository {
+func NewCacheRepository(logger *logrus.Logger, redis *redis.Client, tracer trace.Tracer) URLCacheRepository {
 	return &cacheRepository{
 		logger: logger,
 		cache:  redis,
+		tracer: tracer,
 	}
 }
 
 func (cr *cacheRepository) Set(ctx context.Context, url model.URL) error {
+	_, span := cr.tracer.Start(ctx, "urlCacheRepo.set")
+	defer span.End()
 	value, err := json.Marshal(url)
 	if err != nil {
 		return err
@@ -55,6 +60,8 @@ func (cr *cacheRepository) Set(ctx context.Context, url model.URL) error {
 }
 
 func (cr *cacheRepository) Get(ctx context.Context, shortCode string) (model.URL, error) {
+	_, span := cr.tracer.Start(ctx, "urlCacheRepo.get")
+	defer span.End()
 	var url model.URL
 	result, err := cr.cache.Get(ctx, cr.BuildKeyWithPrefix(shortCode)).Result()
 	if err != nil {
