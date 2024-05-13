@@ -24,3 +24,8 @@ redis:
 # URL shortener settings
 shortener:
   code_length: 7        # Maximum length of generated short code, 62^7 =~ 3.5 trillion
+
+# Worker pool settings
+worker_pool:
+  worker_count: 10          # Number of workers
+  queue_size: 5             # Size of queue (channel), 0 for unbuffered channel
