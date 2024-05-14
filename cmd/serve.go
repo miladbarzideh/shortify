@@ -95,7 +95,7 @@ var cmdServer = func(cfg *infra.Config, log *logrus.Logger, postgresDb *gorm.DB,
 			}
 
 			wp := worker.NewWorkerPool(log, cfg.WorkerPool.WorkerCount, cfg.WorkerPool.QueueSize)
-			telemetry, err := infra.NewTelemetry(cfg)
+			telemetry, err := infra.NewTelemetry(log, cfg)
 			if err != nil {
 				log.Fatal(err)
 			}

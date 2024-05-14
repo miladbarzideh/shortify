@@ -31,9 +31,13 @@ worker_pool:
   queue_size: 5             # Size of queue (channel), 0 for unbuffered channel
 
 # Open telemetry settings
-trace:
-  enabled: true           # Enable or disable tracing
-  jaeger_host: localhost  # Jaeger host (tracing provider)
-  jaeger_port: 6831       # Jaeger port
+telemetry:
   service_namespace_key: shortify_namespace     # Service namespace key attribute
   service_name_key: shortify                    # Service name key
+  trace:
+    enabled: true                               # Enable/Disable tracing
+    jaeger_host: localhost                      # Jaeger host (tracing provider)
+    jaeger_port: 6831                           # Jaeger port
+  meter:
+    enabled: true                               # Enable/Disable metrics
+    address: :8080                              # Metric address

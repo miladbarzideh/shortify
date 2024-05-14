@@ -12,7 +12,7 @@ type Config struct {
 	Redis      Redis      `mapstructure:"redis"`
 	Shortener  Shortener  `mapstructure:"shortener"`
 	WorkerPool WorkerPool `mapstructure:"worker_pool"`
-	Trace      Trace      `mapstructure:"trace"`
+	Telemetry  Tele       `mapstructure:"telemetry"`
 }
 
 type Server struct {
@@ -45,12 +45,22 @@ type WorkerPool struct {
 	QueueSize   int `mapstructure:"queue_size"`
 }
 
-type Trace struct {
-	Enabled             bool   `mapstructure:"enabled"`
-	JaegerHost          string `mapstructure:"jaeger_host"`
-	JaegerPort          string `mapstructure:"jaeger_port"`
+type Tele struct {
 	ServiceNameSpaceKey string `mapstructure:"service_namespace_key"`
 	ServiceNameKey      string `mapstructure:"service_name_key"`
+	Trace               Trace  `mapstructure:"trace"`
+	Meter               Meter  `mapstructure:"meter"`
+}
+
+type Trace struct {
+	Enabled    bool   `mapstructure:"enabled"`
+	JaegerHost string `mapstructure:"jaeger_host"`
+	JaegerPort string `mapstructure:"jaeger_port"`
+}
+
+type Meter struct {
+	Enabled bool   `mapstructure:"enabled"`
+	Address string `mapstructure:"address"`
 }
 
 func Load() (config *Config, err error) {

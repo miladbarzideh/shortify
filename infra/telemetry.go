@@ -3,11 +3,13 @@ package infra
 import (
 	"context"
 	"errors"
-	"time"
+	"net/http"
 
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/jaeger"
-	"go.opentelemetry.io/otel/exporters/stdout/stdoutmetric"
+	"go.opentelemetry.io/otel/exporters/prometheus"
 	"go.opentelemetry.io/otel/metric"
 	mnoop "go.opentelemetry.io/otel/metric/noop"
 	"go.opentelemetry.io/otel/propagation"
@@ -31,27 +33,53 @@ type shutdown interface {
 type Telemetry struct {
 	TraceProvider trace.TracerProvider
 	MeterProvider metric.MeterProvider
+	logger        *logrus.Logger
+	server        *http.Server
 }
 
-func NewTelemetry(cfg *Config) (*Telemetry, error) {
+func NewTelemetry(logger *logrus.Logger, cfg *Config) (*Telemetry, error) {
 	prop := newPropagator()
 	otel.SetTextMapPropagator(prop)
-	tracerProvider, err := newTraceProvider(cfg.Trace)
+	res, err := resource.Merge(
+		resource.Default(),
+		resource.NewSchemaless(
+			semconv.ServiceNamespaceKey.String(cfg.Telemetry.ServiceNameSpaceKey),
+			semconv.ServiceNameKey.String(cfg.Telemetry.ServiceNameKey),
+		),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	tracerProvider, err := newTraceProvider(cfg.Telemetry.Trace, res)
 	if err != nil {
 		return nil, err
 	}
 
 	otel.SetTracerProvider(tracerProvider)
-	meterProvider, err := newMeterProvider()
+	meterProvider, err := newMeterProvider(cfg.Telemetry, res)
 	if err != nil {
 		return nil, err
 	}
 
 	otel.SetMeterProvider(meterProvider)
+	var server *http.Server
+	if cfg.Telemetry.Meter.Enabled {
+		server = &http.Server{Addr: cfg.Telemetry.Meter.Address}
+		server.Handler = http.DefaultServeMux
+		http.Handle("/metrics", promhttp.Handler())
+		go func() {
+			if err = server.ListenAndServe(); err != nil {
+				logger.Fatalf("Failed to start metrics server: %v", err)
+			}
+		}()
+	}
 
 	return &Telemetry{
 		TraceProvider: tracerProvider,
 		MeterProvider: meterProvider,
+		logger:        logger,
+		server:        server,
 	}, nil
 }
 
@@ -71,6 +99,10 @@ func (t Telemetry) Shutdown(ctx context.Context) error {
 		}
 	}
 
+	if t.server != nil {
+		errors.Join(err, t.server.Shutdown(ctx))
+	}
+
 	return err
 }
 
@@ -81,7 +113,7 @@ func newPropagator() propagation.TextMapPropagator {
 	)
 }
 
-func newTraceProvider(cfg Trace) (traceProvider trace.TracerProvider, err error) {
+func newTraceProvider(cfg Trace, resource *resource.Resource) (traceProvider trace.TracerProvider, err error) {
 	if !cfg.Enabled {
 		return NOOPTelemetry.TraceProvider, nil
 	}
@@ -93,35 +125,27 @@ func newTraceProvider(cfg Trace) (traceProvider trace.TracerProvider, err error)
 		return
 	}
 
-	res, err := resource.Merge(
-		resource.Default(),
-		resource.NewSchemaless(
-			semconv.ServiceNamespaceKey.String(cfg.ServiceNameSpaceKey),
-			semconv.ServiceNameKey.String(cfg.ServiceNameKey),
-		),
-	)
-	if err != nil {
-		return
-	}
-
 	traceProvider = sdkTrace.NewTracerProvider(
 		sdkTrace.WithSpanProcessor(sdkTrace.NewBatchSpanProcessor(exporter)),
-		sdkTrace.WithResource(res),
+		sdkTrace.WithResource(resource),
 	)
 
 	return
 }
 
-func newMeterProvider() (metricProvider metric.MeterProvider, err error) {
-	metricExporter, err := stdoutmetric.New()
+func newMeterProvider(cfg Tele, resource *resource.Resource) (metricProvider metric.MeterProvider, err error) {
+	if !cfg.Meter.Enabled {
+		return NOOPTelemetry.MeterProvider, nil
+	}
+
+	exporter, err := prometheus.New(prometheus.WithNamespace(cfg.ServiceNameSpaceKey))
 	if err != nil {
 		return
 	}
 
 	metricProvider = sdkMetric.NewMeterProvider(
-		sdkMetric.WithReader(sdkMetric.NewPeriodicReader(metricExporter,
-			// Default is 1m. Set to 3s for demonstrative purposes.
-			sdkMetric.WithInterval(1*time.Minute))),
+		sdkMetric.WithResource(resource),
+		sdkMetric.WithReader(exporter),
 	)
 
 	return
