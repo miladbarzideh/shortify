@@ -10,6 +10,7 @@ The goal of this project is to implement a simple URL shortener with two endpoin
 - [Cobra](https://cobra.dev/): A Framework for Modern CLI Apps in Go
 - [Go Redis](https://redis.uptrace.dev/): Golang Redis client for Redis Server and Redis Cluster
 - Testing: [testify](https://github.com/stretchr/testify), [redismock](https://github.com/go-redis/redismock), [go-sql-mock](https://github.com/DATA-DOG/go-sqlmock)
+- Monitoring: [opentelemetry](https://opentelemetry.io/), [jaeger](https://www.jaegertracing.io/), [client_golang](https://github.com/prometheus/client_golang)
 
 
 ### Running the Application
