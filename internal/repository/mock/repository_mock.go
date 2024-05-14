@@ -12,8 +12,8 @@ type Repository struct {
 	mock.Mock
 }
 
-func (m *Repository) Create(longURL string, shortCode string) (model.URL, error) {
-	args := m.Called(longURL, shortCode)
+func (m *Repository) Create(ctx context.Context, longURL string, shortCode string) (model.URL, error) {
+	args := m.Called(ctx, longURL, shortCode)
 	return args.Get(0).(model.URL), args.Error(1)
 }
 

@@ -40,8 +40,7 @@ func (suite *URLRepositoryTestSuite) SetupTest() {
 		Conn: db,
 	}), &gorm.Config{})
 	require.NoError(err)
-	tracer := infra.NOOPTelemetry.TraceProvider.Tracer("")
-	suite.repo = NewRepository(logrus.New(), gormDB, tracer)
+	suite.repo = NewRepository(logrus.New(), gormDB, infra.NOOPTelemetry)
 	suite.mock = mock
 }
 
@@ -65,7 +64,7 @@ func (suite *URLRepositoryTestSuite) TestURLRepository_Create_Success() {
 			WithArgs(tc.input.LongURL, tc.input.ShortCode, AnyTime{}, AnyTime{}).
 			WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(i + 1))
 		suite.mock.ExpectCommit()
-		url, err := suite.repo.Create(tc.input.LongURL, tc.input.ShortCode)
+		url, err := suite.repo.Create(context.TODO(), tc.input.LongURL, tc.input.ShortCode)
 
 		require.NoError(err)
 		require.Equal(tc.input.LongURL, url.LongURL)
@@ -96,7 +95,7 @@ func (suite *URLRepositoryTestSuite) TestURLRepository_Create_FailedInsert_Failu
 			WithArgs(tc.input.LongURL, tc.input.ShortCode, AnyTime{}, AnyTime{}).
 			WillReturnError(errors.New("some err"))
 		suite.mock.ExpectRollback()
-		_, err := suite.repo.Create(tc.input.LongURL, tc.input.ShortCode)
+		_, err := suite.repo.Create(context.TODO(), tc.input.LongURL, tc.input.ShortCode)
 
 		require.Error(err)
 		if err = suite.mock.ExpectationsWereMet(); err != nil {

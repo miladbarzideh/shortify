@@ -12,7 +12,7 @@ type Service struct {
 }
 
 func (m *Service) CreateShortURL(ctx context.Context, url string) (string, error) {
-	args := m.Called(url)
+	args := m.Called(ctx, url)
 	return args.String(0), args.Error(1)
 }
 
@@ -25,7 +25,7 @@ func (m *Service) BuildShortURL(shortCode string) string {
 	return fmt.Sprintf("localhost:8513/api/v1/urls/%s", shortCode)
 }
 
-func (m *Service) CreateShortURLWithRetries(longURL string, shortCode string) error {
-	args := m.Called(longURL, shortCode)
+func (m *Service) CreateShortURLWithRetries(ctx context.Context, longURL string, shortCode string) error {
+	args := m.Called(ctx, longURL, shortCode)
 	return args.Error(0)
 }
