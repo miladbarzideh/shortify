@@ -35,7 +35,7 @@ func (suite *URLServiceTestSuite) SetupTest() {
 	cfg := infra.Config{}
 	cfg.Server.Address = "localhost:8513"
 	cfg.Shortener.CodeLength = 7
-	suite.service = NewService(logrus.New(), &cfg, suite.mockRepo, suite.mockCacheRepo, suite.mockGen, suite.mockWP)
+	suite.service = NewService(logrus.New(), &cfg, suite.mockRepo, suite.mockCacheRepo, suite.mockGen, suite.mockWP, infra.NOOPTelemetry)
 }
 
 func (suite *URLServiceTestSuite) TestURLService_CreateShortURL_Success() {
@@ -100,10 +100,11 @@ func (suite *URLServiceTestSuite) TestURLService_CreateShortURLWithRetries_Succe
 			},
 		},
 	}
+	ctx := context.TODO()
 
 	for _, tc := range testCases {
-		suite.mockRepo.On("Create", tc.input.LongURL, tc.input.ShortCode).Return(tc.input, nil)
-		err := suite.service.CreateShortURLWithRetries(tc.input.LongURL, tc.input.ShortCode)
+		suite.mockRepo.On("Create", ctx, tc.input.LongURL, tc.input.ShortCode).Return(tc.input, nil)
+		err := suite.service.CreateShortURLWithRetries(ctx, tc.input.LongURL, tc.input.ShortCode)
 
 		require.NoError(err)
 	}
@@ -121,11 +122,12 @@ func (suite *URLServiceTestSuite) TestURLService_CreateShortURLWithRetries_DoRet
 			},
 		},
 	}
+	ctx := context.TODO()
 
 	for _, tc := range testCases {
-		suite.mockRepo.On("Create", tc.input.LongURL, tc.input.ShortCode).Return(model.URL{}, gorm.ErrDuplicatedKey).Once()
-		suite.mockRepo.On("Create", tc.input.LongURL, tc.input.ShortCode).Return(tc.input, nil).Once()
-		err := suite.service.CreateShortURLWithRetries(tc.input.LongURL, tc.input.ShortCode)
+		suite.mockRepo.On("Create", ctx, tc.input.LongURL, tc.input.ShortCode).Return(model.URL{}, gorm.ErrDuplicatedKey).Once()
+		suite.mockRepo.On("Create", ctx, tc.input.LongURL, tc.input.ShortCode).Return(tc.input, nil).Once()
+		err := suite.service.CreateShortURLWithRetries(ctx, tc.input.LongURL, tc.input.ShortCode)
 
 		require.NoError(err)
 	}
@@ -143,11 +145,12 @@ func (suite *URLServiceTestSuite) TestURLService_CreateShortURLWithRetries_DoRet
 			},
 		},
 	}
+	ctx := context.TODO()
 
 	for _, tc := range testCases {
-		suite.mockRepo.On("Create", tc.input.LongURL, tc.input.ShortCode).Return(model.URL{}, gorm.ErrDuplicatedKey).Once()
-		suite.mockRepo.On("Create", tc.input.LongURL, tc.input.ShortCode).Return(tc.input, gorm.ErrInvalidData).Once()
-		err := suite.service.CreateShortURLWithRetries(tc.input.LongURL, tc.input.ShortCode)
+		suite.mockRepo.On("Create", ctx, tc.input.LongURL, tc.input.ShortCode).Return(model.URL{}, gorm.ErrDuplicatedKey).Once()
+		suite.mockRepo.On("Create", ctx, tc.input.LongURL, tc.input.ShortCode).Return(tc.input, gorm.ErrInvalidData).Once()
+		err := suite.service.CreateShortURLWithRetries(ctx, tc.input.LongURL, tc.input.ShortCode)
 
 		require.Error(err)
 	}

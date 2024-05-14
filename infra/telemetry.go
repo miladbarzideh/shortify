@@ -19,7 +19,7 @@ import (
 	"go.opentelemetry.io/otel/trace/noop"
 )
 
-var NOOPTelemetry = Telemetry{
+var NOOPTelemetry = &Telemetry{
 	TraceProvider: noop.NewTracerProvider(),
 	MeterProvider: mnoop.NewMeterProvider(),
 }

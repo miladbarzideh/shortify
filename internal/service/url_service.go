@@ -24,40 +24,43 @@ type URLService interface {
 	CreateShortURL(ctx context.Context, url string) (string, error)
 	GetLongURL(ctx context.Context, shortCode string) (string, error)
 	BuildShortURL(shortCode string) string
-	CreateShortURLWithRetries(longURL string, shortCode string) error
+	CreateShortURLWithRetries(ctx context.Context, longURL string, shortCode string) error
 }
 
 type service struct {
-	logger    *logrus.Logger
-	cfg       *infra.Config
-	repo      repository.URLRepository
-	cacheRepo repository.URLCacheRepository
-	gen       generator.Generator
-	wp        worker.Pool
+	logger     *logrus.Logger
+	cfg        *infra.Config
+	repo       repository.URLRepository
+	cacheRepo  repository.URLCacheRepository
+	gen        generator.Generator
+	wp         worker.Pool
+	cacheStats infra.CacheStats
 }
 
-func NewService(
-	logger *logrus.Logger,
+func NewService(logger *logrus.Logger,
 	cfg *infra.Config,
 	repo repository.URLRepository,
 	cacheRepo repository.URLCacheRepository,
 	gen generator.Generator,
 	wp worker.Pool,
+	telemetry *infra.Telemetry,
 ) URLService {
+	meter := telemetry.MeterProvider.Meter("urlService")
 	return &service{
-		logger:    logger,
-		cfg:       cfg,
-		repo:      repo,
-		cacheRepo: cacheRepo,
-		gen:       gen,
-		wp:        wp,
+		logger:     logger,
+		cfg:        cfg,
+		repo:       repo,
+		cacheRepo:  cacheRepo,
+		gen:        gen,
+		wp:         wp,
+		cacheStats: infra.NewCacheStats(meter),
 	}
 }
 
 func (svc *service) CreateShortURL(ctx context.Context, longURL string) (string, error) {
 	shortCode := svc.gen.GenerateShortURLCode(svc.cfg.Shortener.CodeLength)
 	if err := svc.wp.Submit(func() {
-		if err := svc.CreateShortURLWithRetries(longURL, shortCode); err != nil {
+		if err := svc.CreateShortURLWithRetries(ctx, longURL, shortCode); err != nil {
 			svc.logger.Error(err.Error())
 		}
 	}); err != nil {
@@ -74,9 +77,9 @@ func (svc *service) CreateShortURL(ctx context.Context, longURL string) (string,
 	return shortURL, nil
 }
 
-func (svc *service) CreateShortURLWithRetries(longURL string, shortCode string) error {
+func (svc *service) CreateShortURLWithRetries(ctx context.Context, longURL string, shortCode string) error {
 	for i := 0; i < maxRetries; i++ {
-		url, err := svc.repo.Create(longURL, shortCode)
+		url, err := svc.repo.Create(ctx, longURL, shortCode)
 		if err == nil {
 			svc.logger.WithFields(logrus.Fields{
 				"originalURL": url.LongURL,
@@ -98,6 +101,7 @@ func (svc *service) CreateShortURLWithRetries(longURL string, shortCode string) 
 
 func (svc *service) GetLongURL(ctx context.Context, shortCode string) (string, error) {
 	if url, err := svc.cacheRepo.Get(ctx, shortCode); err == nil {
+		svc.cacheStats.Hits.Inc(ctx)
 		return url.LongURL, nil
 	}
 
@@ -106,6 +110,7 @@ func (svc *service) GetLongURL(ctx context.Context, shortCode string) (string, e
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return "", ErrURLNotFound
 		}
+
 		return "", err
 	}
 
@@ -117,6 +122,7 @@ func (svc *service) GetLongURL(ctx context.Context, shortCode string) (string, e
 		"originalURL": url.LongURL,
 		"shortURL":    svc.BuildShortURL(shortCode),
 	}).Debug("read URL from database")
+	svc.cacheStats.Hits.Inc(ctx)
 
 	return url.LongURL, nil
 }
