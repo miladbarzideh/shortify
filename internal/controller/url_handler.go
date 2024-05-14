@@ -28,18 +28,27 @@ type URLHandler interface {
 }
 
 type handler struct {
-	logger  *logrus.Logger
-	cfg     *infra.Config
-	service service.URLService
-	tracer  trace.Tracer
+	logger         *logrus.Logger
+	cfg            *infra.Config
+	service        service.URLService
+	tracer         trace.Tracer
+	getReqCount    infra.Counter
+	createReqCount infra.Counter
 }
 
-func NewHandler(logger *logrus.Logger, cfg *infra.Config, service service.URLService, tracer trace.Tracer) URLHandler {
+func NewHandler(logger *logrus.Logger, cfg *infra.Config, service service.URLService, telemetry *infra.Telemetry) URLHandler {
+	tracer := telemetry.TraceProvider.Tracer("urlHandler")
+	meter := telemetry.MeterProvider.Meter("urlHandler")
+	getReqCount := infra.NewCounter(meter, "url.gets")
+	createReqCount := infra.NewCounter(meter, "url.creates")
+
 	return &handler{
-		logger:  logger,
-		cfg:     cfg,
-		service: service,
-		tracer:  tracer,
+		logger:         logger,
+		cfg:            cfg,
+		service:        service,
+		tracer:         tracer,
+		getReqCount:    getReqCount,
+		createReqCount: createReqCount,
 	}
 }
 
@@ -71,6 +80,8 @@ func (h *handler) CreateShortURL() echo.HandlerFunc {
 			return echo.NewHTTPError(http.StatusInternalServerError, msgInternalServerError)
 		}
 
+		h.createReqCount.Inc(ctx)
+
 		return c.JSON(http.StatusOK, &model.URLData{
 			URL: shortURL,
 		})
@@ -100,6 +111,8 @@ func (h *handler) RedirectToLongURL() echo.HandlerFunc {
 
 			return echo.NewHTTPError(http.StatusInternalServerError, msgInternalServerError)
 		}
+
+		h.getReqCount.Inc(ctx)
 
 		return c.Redirect(http.StatusMovedPermanently, longURL)
 	}

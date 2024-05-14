@@ -73,11 +73,11 @@ func (s *Server) Run() {
 }
 
 func (s *Server) mapHandlers(app *echo.Echo) {
-	urlRepository := repository.NewRepository(s.logger, s.db, s.telemetry.TraceProvider.Tracer("urlRepo"))
-	urlCacheRepository := repository.NewCacheRepository(s.logger, s.redis, s.telemetry.TraceProvider.Tracer("urlCacheRepo"))
+	urlRepository := repository.NewRepository(s.logger, s.db, s.telemetry)
+	urlCacheRepository := repository.NewCacheRepository(s.logger, s.redis, s.telemetry)
 	gen := generator.NewGenerator()
-	urlService := service.NewService(s.logger, s.cfg, urlRepository, urlCacheRepository, gen, s.wp)
-	urlHandler := controller.NewHandler(s.logger, s.cfg, urlService, s.telemetry.TraceProvider.Tracer("urlHandler"))
+	urlService := service.NewService(s.logger, s.cfg, urlRepository, urlCacheRepository, gen, s.wp, s.telemetry)
+	urlHandler := controller.NewHandler(s.logger, s.cfg, urlService, s.telemetry)
 	groupV1 := app.Group("/api/v1")
 	groupV1.POST("/urls/shorten", urlHandler.CreateShortURL())
 	groupV1.GET("/urls/:url", urlHandler.RedirectToLongURL())

@@ -31,8 +31,7 @@ type URLHandlerTestSuite struct {
 
 func (suite *URLHandlerTestSuite) SetupTest() {
 	suite.mockService = new(mock.Service)
-	tracer := infra.NOOPTelemetry.TraceProvider.Tracer("")
-	suite.handler = NewHandler(logrus.New(), &infra.Config{}, suite.mockService, tracer)
+	suite.handler = NewHandler(logrus.New(), &infra.Config{}, suite.mockService, infra.NOOPTelemetry)
 }
 
 func (suite *URLHandlerTestSuite) TestURLHandler_CreateShortURL_Success() {
@@ -52,7 +51,7 @@ func (suite *URLHandlerTestSuite) TestURLHandler_CreateShortURL_Success() {
 	for _, tc := range testCases {
 		c, rec := newEchoContext(http.MethodPost, "/api/v1/urls", tc.input, "")
 
-		suite.mockService.On("CreateShortURL", testifymock.Anything).Return(tc.expectedResponse.URL, nil)
+		suite.mockService.On("CreateShortURL", testifymock.Anything, testifymock.Anything).Return(tc.expectedResponse.URL, nil)
 		err := suite.handler.CreateShortURL()(c)
 
 		require.NoError(err)
@@ -87,7 +86,7 @@ func (suite *URLHandlerTestSuite) TestURLHandler_CreateShortURL_Failure() {
 	for _, tc := range testCases {
 		c, _ := newEchoContext(http.MethodPost, "/api/v1/urls", tc.input, "")
 
-		suite.mockService.On("CreateShortURL", testifymock.Anything).Return("", gorm.ErrRecordNotFound)
+		suite.mockService.On("CreateShortURL", testifymock.Anything, testifymock.Anything).Return("", gorm.ErrRecordNotFound)
 		err := suite.handler.CreateShortURL()(c)
 
 		require.Error(err)
