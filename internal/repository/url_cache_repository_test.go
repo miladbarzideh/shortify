@@ -23,8 +23,7 @@ type URLCacheRepositoryTestSuite struct {
 
 func (suite *URLCacheRepositoryTestSuite) SetupTest() {
 	db, mock := redismock.NewClientMock()
-	tracer := infra.NOOPTelemetry.TraceProvider.Tracer("")
-	suite.cacheRepo = NewCacheRepository(logrus.New(), db, tracer)
+	suite.cacheRepo = NewCacheRepository(logrus.New(), db, infra.NOOPTelemetry)
 	suite.cacheMock = mock
 }
 

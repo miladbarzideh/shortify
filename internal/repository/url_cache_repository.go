@@ -10,6 +10,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/trace"
 
+	"github.com/miladbarzideh/shortify/infra"
 	"github.com/miladbarzideh/shortify/internal/model"
 )
 
@@ -30,7 +31,8 @@ type cacheRepository struct {
 	tracer trace.Tracer
 }
 
-func NewCacheRepository(logger *logrus.Logger, redis *redis.Client, tracer trace.Tracer) URLCacheRepository {
+func NewCacheRepository(logger *logrus.Logger, redis *redis.Client, telemetry *infra.Telemetry) URLCacheRepository {
+	tracer := telemetry.TraceProvider.Tracer("urlCacheRepo")
 	return &cacheRepository{
 		logger: logger,
 		cache:  redis,
