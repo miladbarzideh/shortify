@@ -12,7 +12,7 @@ type Config struct {
 	Redis      Redis      `mapstructure:"redis"`
 	Shortener  Shortener  `mapstructure:"shortener"`
 	WorkerPool WorkerPool `mapstructure:"worker_pool"`
-	Telemetry  Tele       `mapstructure:"telemetry"`
+	Telemetry  Telemetry  `mapstructure:"telemetry"`
 }
 
 type Server struct {
@@ -45,7 +45,7 @@ type WorkerPool struct {
 	QueueSize   int `mapstructure:"queue_size"`
 }
 
-type Tele struct {
+type Telemetry struct {
 	ServiceNamespaceKey string `mapstructure:"service_namespace_key"`
 	ServiceNameKey      string `mapstructure:"service_name_key"`
 	Trace               Trace  `mapstructure:"trace"`

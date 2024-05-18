@@ -31,7 +31,7 @@ type cacheRepository struct {
 	tracer trace.Tracer
 }
 
-func NewCacheRepository(logger *logrus.Logger, redis *redis.Client, telemetry *infra.Telemetry) URLCacheRepository {
+func NewCacheRepository(logger *logrus.Logger, redis *redis.Client, telemetry *infra.TelemetryProvider) URLCacheRepository {
 	tracer := telemetry.TraceProvider.Tracer("urlCacheRepo")
 	return &cacheRepository{
 		logger: logger,

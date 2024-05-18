@@ -21,7 +21,7 @@ import (
 	"go.opentelemetry.io/otel/trace/noop"
 )
 
-var NOOPTelemetry = &Telemetry{
+var NOOPTelemetry = &TelemetryProvider{
 	TraceProvider: noop.NewTracerProvider(),
 	MeterProvider: mnoop.NewMeterProvider(),
 }
@@ -30,14 +30,14 @@ type shutdown interface {
 	Shutdown(ctx context.Context) error
 }
 
-type Telemetry struct {
+type TelemetryProvider struct {
 	TraceProvider trace.TracerProvider
 	MeterProvider metric.MeterProvider
 	logger        *logrus.Logger
 	server        *http.Server
 }
 
-func NewTelemetry(logger *logrus.Logger, cfg *Config) (*Telemetry, error) {
+func NewTelemetry(logger *logrus.Logger, cfg *Config) (*TelemetryProvider, error) {
 	prop := newPropagator()
 	otel.SetTextMapPropagator(prop)
 	res, err := resource.Merge(
@@ -75,7 +75,7 @@ func NewTelemetry(logger *logrus.Logger, cfg *Config) (*Telemetry, error) {
 		}()
 	}
 
-	return &Telemetry{
+	return &TelemetryProvider{
 		TraceProvider: tracerProvider,
 		MeterProvider: meterProvider,
 		logger:        logger,
@@ -83,7 +83,7 @@ func NewTelemetry(logger *logrus.Logger, cfg *Config) (*Telemetry, error) {
 	}, nil
 }
 
-func (t Telemetry) Shutdown(ctx context.Context) error {
+func (t TelemetryProvider) Shutdown(ctx context.Context) error {
 	var err error
 	if t.TraceProvider != nil {
 		tp, ok := t.TraceProvider.(shutdown)
@@ -133,7 +133,7 @@ func newTraceProvider(cfg Trace, resource *resource.Resource) (traceProvider tra
 	return
 }
 
-func newMeterProvider(cfg Tele, resource *resource.Resource) (metricProvider metric.MeterProvider, err error) {
+func newMeterProvider(cfg Telemetry, resource *resource.Resource) (metricProvider metric.MeterProvider, err error) {
 	if !cfg.Metric.Enabled {
 		return NOOPTelemetry.MeterProvider, nil
 	}

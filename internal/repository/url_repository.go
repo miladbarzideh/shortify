@@ -25,7 +25,7 @@ type Repository struct {
 	getLatency    infra.Latency
 }
 
-func NewRepository(logger *logrus.Logger, db *gorm.DB, telemetry *infra.Telemetry) URLRepository {
+func NewRepository(logger *logrus.Logger, db *gorm.DB, telemetry *infra.TelemetryProvider) URLRepository {
 	tracer := telemetry.TraceProvider.Tracer("urlRepo")
 	meter := telemetry.MeterProvider.Meter("urlRepo")
 	createLatency := infra.NewLatency(meter, "db.create")

@@ -29,7 +29,7 @@ type Server struct {
 	db        *gorm.DB
 	redis     *redis.Client
 	wp        worker.Pool
-	telemetry *infra.Telemetry
+	telemetry *infra.TelemetryProvider
 }
 
 func NewServer(
@@ -38,7 +38,7 @@ func NewServer(
 	db *gorm.DB,
 	redis *redis.Client,
 	wp worker.Pool,
-	telemetry *infra.Telemetry,
+	telemetry *infra.TelemetryProvider,
 ) *Server {
 	return &Server{
 		logger:    logger,

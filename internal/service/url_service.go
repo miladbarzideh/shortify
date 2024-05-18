@@ -43,7 +43,7 @@ func NewService(logger *logrus.Logger,
 	cacheRepo repository.URLCacheRepository,
 	gen generator.Generator,
 	wp worker.Pool,
-	telemetry *infra.Telemetry,
+	telemetry *infra.TelemetryProvider,
 ) URLService {
 	meter := telemetry.MeterProvider.Meter("urlService")
 	return &service{

@@ -36,7 +36,7 @@ type handler struct {
 	createReqCount infra.Counter
 }
 
-func NewHandler(logger *logrus.Logger, cfg *infra.Config, service service.URLService, telemetry *infra.Telemetry) URLHandler {
+func NewHandler(logger *logrus.Logger, cfg *infra.Config, service service.URLService, telemetry *infra.TelemetryProvider) URLHandler {
 	tracer := telemetry.TraceProvider.Tracer("urlHandler")
 	meter := telemetry.MeterProvider.Meter("urlHandler")
 	getReqCount := infra.NewCounter(meter, "url.gets")
