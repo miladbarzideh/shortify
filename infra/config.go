@@ -49,7 +49,7 @@ type Telemetry struct {
 	ServiceNamespaceKey string `mapstructure:"service_namespace_key"`
 	ServiceNameKey      string `mapstructure:"service_name_key"`
 	Trace               Trace  `mapstructure:"trace"`
-	Metric              Meter  `mapstructure:"metric"`
+	Metric              Metric `mapstructure:"metric"`
 }
 
 type Trace struct {
@@ -58,7 +58,7 @@ type Trace struct {
 	JaegerPort string `mapstructure:"jaeger_port"`
 }
 
-type Meter struct {
+type Metric struct {
 	Enabled bool   `mapstructure:"enabled"`
 	Address string `mapstructure:"address"`
 }
