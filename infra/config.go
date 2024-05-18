@@ -46,7 +46,7 @@ type WorkerPool struct {
 }
 
 type Tele struct {
-	ServiceNameSpaceKey string `mapstructure:"service_namespace_key"`
+	ServiceNamespaceKey string `mapstructure:"service_namespace_key"`
 	ServiceNameKey      string `mapstructure:"service_name_key"`
 	Trace               Trace  `mapstructure:"trace"`
 	Metric              Meter  `mapstructure:"metric"`

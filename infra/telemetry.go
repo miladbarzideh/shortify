@@ -43,7 +43,7 @@ func NewTelemetry(logger *logrus.Logger, cfg *Config) (*Telemetry, error) {
 	res, err := resource.Merge(
 		resource.Default(),
 		resource.NewSchemaless(
-			semconv.ServiceNamespaceKey.String(cfg.Telemetry.ServiceNameSpaceKey),
+			semconv.ServiceNamespaceKey.String(cfg.Telemetry.ServiceNamespaceKey),
 			semconv.ServiceNameKey.String(cfg.Telemetry.ServiceNameKey),
 		),
 	)
@@ -138,7 +138,7 @@ func newMeterProvider(cfg Tele, resource *resource.Resource) (metricProvider met
 		return NOOPTelemetry.MeterProvider, nil
 	}
 
-	exporter, err := prometheus.New(prometheus.WithNamespace(cfg.ServiceNameSpaceKey))
+	exporter, err := prometheus.New(prometheus.WithNamespace(cfg.ServiceNamespaceKey))
 	if err != nil {
 		return
 	}
