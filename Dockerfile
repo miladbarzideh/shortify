@@ -19,7 +19,7 @@ WORKDIR /app
 COPY --from=build-stage /app/shortify .
 COPY --from=build-stage /app/config.yml .
 
-EXPOSE 8513
+EXPOSE 8513 8080
 
 ENTRYPOINT ["./shortify"]
 
