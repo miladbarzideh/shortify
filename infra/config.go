@@ -49,7 +49,7 @@ type Tele struct {
 	ServiceNameSpaceKey string `mapstructure:"service_namespace_key"`
 	ServiceNameKey      string `mapstructure:"service_name_key"`
 	Trace               Trace  `mapstructure:"trace"`
-	Meter               Meter  `mapstructure:"meter"`
+	Metric              Meter  `mapstructure:"metric"`
 }
 
 type Trace struct {

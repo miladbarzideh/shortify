@@ -38,6 +38,6 @@ telemetry:
     enabled: true                               # Enable/Disable tracing
     jaeger_host: localhost                      # Jaeger host (tracing provider)
     jaeger_port: 6831                           # Jaeger port
-  meter:
+  metric:
     enabled: true                               # Enable/Disable metrics
     address: :8080                              # Metric address

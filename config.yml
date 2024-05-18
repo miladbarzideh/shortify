@@ -30,6 +30,6 @@ telemetry:
     enabled: true
     jaeger_host: localhost
     jaeger_port: 6831
-  meter:
+  metric:
     enabled: true
     address: :8080

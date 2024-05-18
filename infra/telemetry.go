@@ -64,8 +64,8 @@ func NewTelemetry(logger *logrus.Logger, cfg *Config) (*Telemetry, error) {
 
 	otel.SetMeterProvider(meterProvider)
 	var server *http.Server
-	if cfg.Telemetry.Meter.Enabled {
-		server = &http.Server{Addr: cfg.Telemetry.Meter.Address}
+	if cfg.Telemetry.Metric.Enabled {
+		server = &http.Server{Addr: cfg.Telemetry.Metric.Address}
 		server.Handler = http.DefaultServeMux
 		http.Handle("/metrics", promhttp.Handler())
 		go func() {
@@ -134,7 +134,7 @@ func newTraceProvider(cfg Trace, resource *resource.Resource) (traceProvider tra
 }
 
 func newMeterProvider(cfg Tele, resource *resource.Resource) (metricProvider metric.MeterProvider, err error) {
-	if !cfg.Meter.Enabled {
+	if !cfg.Metric.Enabled {
 		return NOOPTelemetry.MeterProvider, nil
 	}
 
