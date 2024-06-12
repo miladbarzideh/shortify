@@ -56,7 +56,7 @@ func (suite *URLServiceTestSuite) TestURLService_CreateShortURL_Success() {
 	for _, tc := range testCases {
 		suite.mockGen.On("GenerateShortURLCode", testifyMock.Anything).Return(tc.expectedURL.ShortCode)
 		suite.mockWP.On("Submit", testifyMock.AnythingOfType("func()")).Return(nil)
-		url, err := suite.service.CreateShortURL(nil, tc.input)
+		url, err := suite.service.CreateShortURL(context.TODO(), tc.input)
 
 		require.NoError(err)
 		require.NotEmpty(url)
@@ -81,7 +81,7 @@ func (suite *URLServiceTestSuite) TestURLService_CreateShortURL_Failure() {
 	for _, tc := range testCases {
 		suite.mockGen.On("GenerateShortURLCode", testifyMock.Anything).Return(tc.expectedURL.ShortCode)
 		suite.mockWP.On("Submit", testifyMock.AnythingOfType("func()")).Return(errors.New("pool is shutting down"))
-		url, err := suite.service.CreateShortURL(nil, tc.input)
+		url, err := suite.service.CreateShortURL(context.TODO(), tc.input)
 
 		require.Error(err)
 		require.Empty(url)
