@@ -11,23 +11,25 @@ const base62Charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01234
 var base62Regex = regexp.MustCompile("^[a-zA-Z0-9]+$")
 
 type Generator interface {
-	GenerateShortURLCode(length int) string
+	GenerateShortURLCode() string
 }
 
 type generator struct {
-	rand *rand.Rand
+	rand   *rand.Rand
+	length int
 }
 
-func NewGenerator() Generator {
+func NewGenerator(length int) *generator {
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	return &generator{
-		rand: r,
+		rand:   r,
+		length: length,
 	}
 }
 
-func (g *generator) GenerateShortURLCode(length int) string {
-	result := make([]byte, length)
-	for i := 0; i < length; i++ {
+func (g *generator) GenerateShortURLCode() string {
+	result := make([]byte, g.length)
+	for i := 0; i < g.length; i++ {
 		charIndex := g.rand.Intn(len(base62Charset))
 		result[i] = base62Charset[charIndex]
 	}
@@ -37,4 +39,8 @@ func (g *generator) GenerateShortURLCode(length int) string {
 
 func IsValidBase62(s string) bool {
 	return base62Regex.MatchString(s)
+}
+
+func (g *generator) SetLength(length int) {
+	g.length = length
 }

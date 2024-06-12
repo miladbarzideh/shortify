@@ -8,7 +8,7 @@ type Generator struct {
 	mock.Mock
 }
 
-func (g *Generator) GenerateShortURLCode(length int) string {
-	args := g.Called(length)
+func (g *Generator) GenerateShortURLCode() string {
+	args := g.Called()
 	return args.String(0)
 }

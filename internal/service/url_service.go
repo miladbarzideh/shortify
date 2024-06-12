@@ -58,7 +58,7 @@ func NewService(logger *logrus.Logger,
 }
 
 func (svc *service) CreateShortURL(ctx context.Context, longURL string) (string, error) {
-	shortCode := svc.gen.GenerateShortURLCode(svc.cfg.Shortener.CodeLength)
+	shortCode := svc.gen.GenerateShortURLCode()
 	if err := svc.wp.Submit(func() {
 		if err := svc.CreateShortURLWithRetries(ctx, longURL, shortCode); err != nil {
 			svc.logger.Error(err.Error())

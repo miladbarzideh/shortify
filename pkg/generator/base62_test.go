@@ -10,7 +10,7 @@ import (
 
 type GeneratorTestSuite struct {
 	suite.Suite
-	generator Generator
+	generator *generator
 }
 
 func (suite *GeneratorTestSuite) SetupTest() {
@@ -19,7 +19,7 @@ func (suite *GeneratorTestSuite) SetupTest() {
 	})
 	defer patches.Reset()
 
-	suite.generator = NewGenerator()
+	suite.generator = NewGenerator(7)
 }
 
 func (suite *GeneratorTestSuite) TestGenerator_GenerateShortURLCode_Success() {
@@ -39,7 +39,8 @@ func (suite *GeneratorTestSuite) TestGenerator_GenerateShortURLCode_Success() {
 	}
 
 	for _, tc := range testCases {
-		actual := suite.generator.GenerateShortURLCode(tc.input)
+		suite.generator.SetLength(tc.input)
+		actual := suite.generator.GenerateShortURLCode()
 
 		require.Equal(tc.input, len(actual))
 		require.Equal(tc.expected, actual)

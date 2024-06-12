@@ -75,7 +75,7 @@ func (s *Server) Run() {
 func (s *Server) mapHandlers(app *echo.Echo) {
 	urlRepository := repository.NewRepository(s.logger, s.db, s.telemetry)
 	urlCacheRepository := repository.NewCacheRepository(s.logger, s.redis, s.telemetry)
-	gen := generator.NewGenerator()
+	gen := generator.NewGenerator(s.cfg.Shortener.CodeLength)
 	urlService := service.NewService(s.logger, s.cfg, urlRepository, urlCacheRepository, gen, s.wp, s.telemetry)
 	urlHandler := controller.NewHandler(s.logger, s.cfg, urlService, s.telemetry)
 	groupV1 := app.Group("/api/v1")
