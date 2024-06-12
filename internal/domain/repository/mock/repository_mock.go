@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/mock"
 
-	"github.com/miladbarzideh/shortify/internal/model"
+	"github.com/miladbarzideh/shortify/internal/domain/model"
 )
 
 type Repository struct {

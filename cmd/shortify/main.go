@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/miladbarzideh/shortify/cmd"
+	"github.com/miladbarzideh/shortify/internal/cmd"
 )
 
 func main() {

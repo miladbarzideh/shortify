@@ -10,8 +10,8 @@ import (
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/trace"
 
-	"github.com/miladbarzideh/shortify/infra"
-	"github.com/miladbarzideh/shortify/internal/model"
+	"github.com/miladbarzideh/shortify/internal/domain/model"
+	"github.com/miladbarzideh/shortify/internal/infra"
 )
 
 const (

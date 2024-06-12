@@ -8,8 +8,8 @@ import (
 	"go.opentelemetry.io/otel/trace"
 	"gorm.io/gorm"
 
-	"github.com/miladbarzideh/shortify/infra"
-	"github.com/miladbarzideh/shortify/internal/model"
+	"github.com/miladbarzideh/shortify/internal/domain/model"
+	infra2 "github.com/miladbarzideh/shortify/internal/infra"
 )
 
 type URLRepository interface {
@@ -21,15 +21,15 @@ type Repository struct {
 	logger        *logrus.Logger
 	db            *gorm.DB
 	tracer        trace.Tracer
-	createLatency infra.Latency
-	getLatency    infra.Latency
+	createLatency infra2.Latency
+	getLatency    infra2.Latency
 }
 
-func NewRepository(logger *logrus.Logger, db *gorm.DB, telemetry *infra.TelemetryProvider) URLRepository {
+func NewRepository(logger *logrus.Logger, db *gorm.DB, telemetry *infra2.TelemetryProvider) URLRepository {
 	tracer := telemetry.TraceProvider.Tracer("urlRepo")
 	meter := telemetry.MeterProvider.Meter("urlRepo")
-	createLatency := infra.NewLatency(meter, "db.create")
-	getLatency := infra.NewLatency(meter, "db.get")
+	createLatency := infra2.NewLatency(meter, "db.create")
+	getLatency := infra2.NewLatency(meter, "db.get")
 
 	return &Repository{
 		logger:        logger,

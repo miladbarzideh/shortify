@@ -11,9 +11,9 @@ import (
 	"github.com/stretchr/testify/suite"
 	"gorm.io/gorm"
 
-	"github.com/miladbarzideh/shortify/infra"
-	"github.com/miladbarzideh/shortify/internal/model"
-	"github.com/miladbarzideh/shortify/internal/repository/mock"
+	"github.com/miladbarzideh/shortify/internal/domain/model"
+	mock2 "github.com/miladbarzideh/shortify/internal/domain/repository/mock"
+	infra2 "github.com/miladbarzideh/shortify/internal/infra"
 	genMock "github.com/miladbarzideh/shortify/pkg/generator/mock"
 	wpMock "github.com/miladbarzideh/shortify/pkg/worker/mock"
 )
@@ -21,21 +21,21 @@ import (
 type URLServiceTestSuite struct {
 	suite.Suite
 	service       URLService
-	mockRepo      *mock.Repository
-	mockCacheRepo *mock.CacheRepository
+	mockRepo      *mock2.Repository
+	mockCacheRepo *mock2.CacheRepository
 	mockGen       *genMock.Generator
 	mockWP        *wpMock.Pool
 }
 
 func (suite *URLServiceTestSuite) SetupTest() {
-	suite.mockRepo = new(mock.Repository)
-	suite.mockCacheRepo = new(mock.CacheRepository)
+	suite.mockRepo = new(mock2.Repository)
+	suite.mockCacheRepo = new(mock2.CacheRepository)
 	suite.mockGen = new(genMock.Generator)
 	suite.mockWP = new(wpMock.Pool)
-	cfg := infra.Config{}
+	cfg := infra2.Config{}
 	cfg.Server.Address = "localhost:8513"
 	cfg.Shortener.CodeLength = 7
-	suite.service = NewService(logrus.New(), &cfg, suite.mockRepo, suite.mockCacheRepo, suite.mockGen, suite.mockWP, infra.NOOPTelemetry)
+	suite.service = NewService(logrus.New(), &cfg, suite.mockRepo, suite.mockCacheRepo, suite.mockGen, suite.mockWP, infra2.NOOPTelemetry)
 }
 
 func (suite *URLServiceTestSuite) TestURLService_CreateShortURL_Success() {

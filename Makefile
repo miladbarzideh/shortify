@@ -4,10 +4,13 @@
 # Main
 
 run:
-	go run main.go serve
+	go run ./cmd/shortify/main.go serve
+
+migrate:
+	go run ./cmd/shortify/main.go migrate
 
 build:
-	go build -o shortify ./main.go
+	go build -o shortify ./cmd/shortify/main.go
 
 test:
 	go test -cover ./...

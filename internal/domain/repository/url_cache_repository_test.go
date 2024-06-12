@@ -11,8 +11,8 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/miladbarzideh/shortify/infra"
-	"github.com/miladbarzideh/shortify/internal/model"
+	"github.com/miladbarzideh/shortify/internal/domain/model"
+	"github.com/miladbarzideh/shortify/internal/infra"
 )
 
 type URLCacheRepositoryTestSuite struct {

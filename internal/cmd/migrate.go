@@ -5,7 +5,7 @@ import (
 	"github.com/spf13/cobra"
 	"gorm.io/gorm"
 
-	"github.com/miladbarzideh/shortify/internal/model"
+	"github.com/miladbarzideh/shortify/internal/domain/model"
 )
 
 var cmdMigrate = func(log *logrus.Logger, postgresDb *gorm.DB) *cobra.Command {

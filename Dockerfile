@@ -9,7 +9,7 @@ RUN go mod download
 
 COPY . .
 
-RUN go build -o shortify main.go
+RUN go build -o shortify ./cmd/shortify/main.go
 
 # Deploy the application binary into a distroless image
 FROM gcr.io/distroless/static-debian12 as build-release-stage

@@ -10,9 +10,9 @@ import (
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
 
-	"github.com/miladbarzideh/shortify/infra"
-	"github.com/miladbarzideh/shortify/internal/model"
-	"github.com/miladbarzideh/shortify/internal/service"
+	"github.com/miladbarzideh/shortify/internal/domain/model"
+	"github.com/miladbarzideh/shortify/internal/domain/service"
+	infra2 "github.com/miladbarzideh/shortify/internal/infra"
 	"github.com/miladbarzideh/shortify/pkg/generator"
 )
 
@@ -29,18 +29,18 @@ type URLHandler interface {
 
 type handler struct {
 	logger         *logrus.Logger
-	cfg            *infra.Config
+	cfg            *infra2.Config
 	service        service.URLService
 	tracer         trace.Tracer
-	getReqCount    infra.Counter
-	createReqCount infra.Counter
+	getReqCount    infra2.Counter
+	createReqCount infra2.Counter
 }
 
-func NewHandler(logger *logrus.Logger, cfg *infra.Config, service service.URLService, telemetry *infra.TelemetryProvider) URLHandler {
+func NewHandler(logger *logrus.Logger, cfg *infra2.Config, service service.URLService, telemetry *infra2.TelemetryProvider) URLHandler {
 	tracer := telemetry.TraceProvider.Tracer("urlHandler")
 	meter := telemetry.MeterProvider.Meter("urlHandler")
-	getReqCount := infra.NewCounter(meter, "url.gets")
-	createReqCount := infra.NewCounter(meter, "url.creates")
+	getReqCount := infra2.NewCounter(meter, "url.gets")
+	createReqCount := infra2.NewCounter(meter, "url.creates")
 
 	return &handler{
 		logger:         logger,

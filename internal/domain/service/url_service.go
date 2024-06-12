@@ -8,8 +8,8 @@ import (
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 
-	"github.com/miladbarzideh/shortify/infra"
-	"github.com/miladbarzideh/shortify/internal/repository"
+	repository2 "github.com/miladbarzideh/shortify/internal/domain/repository"
+	infra2 "github.com/miladbarzideh/shortify/internal/infra"
 	"github.com/miladbarzideh/shortify/pkg/generator"
 	"github.com/miladbarzideh/shortify/pkg/worker"
 )
@@ -29,21 +29,21 @@ type URLService interface {
 
 type service struct {
 	logger     *logrus.Logger
-	cfg        *infra.Config
-	repo       repository.URLRepository
-	cacheRepo  repository.URLCacheRepository
+	cfg        *infra2.Config
+	repo       repository2.URLRepository
+	cacheRepo  repository2.URLCacheRepository
 	gen        generator.Generator
 	wp         worker.Pool
-	cacheStats infra.CacheStats
+	cacheStats infra2.CacheStats
 }
 
 func NewService(logger *logrus.Logger,
-	cfg *infra.Config,
-	repo repository.URLRepository,
-	cacheRepo repository.URLCacheRepository,
+	cfg *infra2.Config,
+	repo repository2.URLRepository,
+	cacheRepo repository2.URLCacheRepository,
 	gen generator.Generator,
 	wp worker.Pool,
-	telemetry *infra.TelemetryProvider,
+	telemetry *infra2.TelemetryProvider,
 ) URLService {
 	meter := telemetry.MeterProvider.Meter("urlService")
 	return &service{
@@ -53,7 +53,7 @@ func NewService(logger *logrus.Logger,
 		cacheRepo:  cacheRepo,
 		gen:        gen,
 		wp:         wp,
-		cacheStats: infra.NewCacheStats(meter),
+		cacheStats: infra2.NewCacheStats(meter),
 	}
 }
 
