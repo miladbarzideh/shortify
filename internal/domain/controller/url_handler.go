@@ -27,8 +27,6 @@ const (
 type URLService interface {
 	CreateShortURL(ctx context.Context, url string) (string, error)
 	GetLongURL(ctx context.Context, shortCode string) (string, error)
-	BuildShortURL(shortCode string) string
-	CreateShortURLWithRetries(ctx context.Context, longURL string, shortCode string) (*model.URL, error)
 }
 
 type Handler struct {

@@ -62,12 +62,12 @@ func NewService(logger *logrus.Logger,
 
 func (svc *Service) CreateShortURL(ctx context.Context, longURL string) (string, error) {
 	shortCode := svc.gen.GenerateShortURLCode()
-	url, err := svc.CreateShortURLWithRetries(ctx, longURL, shortCode)
+	url, err := svc.createShortURLWithRetries(ctx, longURL, shortCode)
 	if err != nil {
 		return "", err
 	}
 
-	shortURL := svc.BuildShortURL(url.ShortCode)
+	shortURL := svc.buildShortURL(url.ShortCode)
 	svc.logger.WithFields(logrus.Fields{
 		"originalURL": url.LongURL,
 		"shortURL":    shortURL,
@@ -76,7 +76,7 @@ func (svc *Service) CreateShortURL(ctx context.Context, longURL string) (string,
 	return shortURL, nil
 }
 
-func (svc *Service) CreateShortURLWithRetries(ctx context.Context, longURL string, shortCode string) (*model.URL, error) {
+func (svc *Service) createShortURLWithRetries(ctx context.Context, longURL string, shortCode string) (*model.URL, error) {
 	url := &model.URL{ShortCode: shortCode, LongURL: longURL}
 	for i := 0; i < maxRetries; i++ {
 		err := svc.repo.Create(ctx, url)
@@ -115,13 +115,13 @@ func (svc *Service) GetLongURL(ctx context.Context, shortCode string) (string, e
 
 	svc.logger.WithFields(logrus.Fields{
 		"originalURL": url.LongURL,
-		"shortURL":    svc.BuildShortURL(shortCode),
+		"shortURL":    svc.buildShortURL(shortCode),
 	}).Debug("read URL from database")
 	svc.cacheStats.Hits.Inc(ctx)
 
 	return url.LongURL, nil
 }
 
-func (svc *Service) BuildShortURL(shortCode string) string {
+func (svc *Service) buildShortURL(shortCode string) string {
 	return fmt.Sprintf("%s/api/v1/urls/%s", svc.cfg.Server.Address, shortCode)
 }
