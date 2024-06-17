@@ -4,7 +4,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
-	infra2 "github.com/miladbarzideh/shortify/internal/infra"
+	"github.com/miladbarzideh/shortify/internal/infra"
 )
 
 var rooCmd = &cobra.Command{
@@ -13,18 +13,18 @@ var rooCmd = &cobra.Command{
 }
 
 func Execute() {
-	cfg, err := infra2.Load()
+	cfg, err := infra.Load()
 	if err != nil {
 		logrus.Fatal(err)
 	}
 
-	log := infra2.InitLogger(cfg)
-	postgresDb, err := infra2.NewPostgresConnection(cfg)
+	log := infra.InitLogger(cfg)
+	postgresDb, err := infra.NewPostgresConnection(cfg)
 	if err != nil {
 		log.Fatal("database connection failed")
 	}
 
-	redis, err := infra2.NewRedisClient(cfg)
+	redis, err := infra.NewRedisClient(cfg)
 	if err != nil {
 		log.Fatal("redis client failed")
 	}

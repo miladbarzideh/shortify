@@ -16,7 +16,7 @@ import (
 	"github.com/miladbarzideh/shortify/internal/domain/model"
 	"github.com/miladbarzideh/shortify/internal/domain/service"
 	"github.com/miladbarzideh/shortify/internal/domain/service/mock"
-	infra2 "github.com/miladbarzideh/shortify/internal/infra"
+	"github.com/miladbarzideh/shortify/internal/infra"
 )
 
 const (
@@ -31,7 +31,7 @@ type URLHandlerTestSuite struct {
 
 func (suite *URLHandlerTestSuite) SetupTest() {
 	suite.mockService = new(mock.Service)
-	suite.handler = NewHandler(logrus.New(), &infra2.Config{}, suite.mockService, infra2.NOOPTelemetry)
+	suite.handler = NewHandler(logrus.New(), &infra.Config{}, suite.mockService, infra.NOOPTelemetry)
 }
 
 func (suite *URLHandlerTestSuite) TestURLHandler_CreateShortURL_Success() {
