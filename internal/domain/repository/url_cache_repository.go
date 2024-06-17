@@ -20,8 +20,8 @@ const (
 )
 
 type URLCacheRepository interface {
-	Set(ctx context.Context, url model.URL) error
-	Get(ctx context.Context, shortCode string) (model.URL, error)
+	Set(ctx context.Context, url *model.URL) error
+	Get(ctx context.Context, shortCode string) (*model.URL, error)
 	BuildKeyWithPrefix(url string) string
 }
 
@@ -40,7 +40,7 @@ func NewCacheRepository(logger *logrus.Logger, redis *redis.Client, telemetry *i
 	}
 }
 
-func (cr *cacheRepository) Set(ctx context.Context, url model.URL) error {
+func (cr *cacheRepository) Set(ctx context.Context, url *model.URL) error {
 	_, span := cr.tracer.Start(ctx, "urlCacheRepo.set")
 	defer span.End()
 	value, err := json.Marshal(url)
@@ -61,19 +61,19 @@ func (cr *cacheRepository) Set(ctx context.Context, url model.URL) error {
 	return nil
 }
 
-func (cr *cacheRepository) Get(ctx context.Context, shortCode string) (model.URL, error) {
+func (cr *cacheRepository) Get(ctx context.Context, shortCode string) (*model.URL, error) {
 	_, span := cr.tracer.Start(ctx, "urlCacheRepo.get")
 	defer span.End()
 	var url model.URL
 	result, err := cr.cache.Get(ctx, cr.BuildKeyWithPrefix(shortCode)).Result()
 	if err != nil {
 		cr.logger.Error(err)
-		return url, err
+		return nil, err
 	}
 
 	if err = json.Unmarshal([]byte(result), &url); err != nil {
 		cr.logger.Error(err)
-		return url, err
+		return nil, err
 	}
 
 	cr.logger.WithFields(logrus.Fields{
@@ -81,7 +81,7 @@ func (cr *cacheRepository) Get(ctx context.Context, shortCode string) (model.URL
 		"shortCode":   shortCode,
 	}).Debug("Read URL from cache")
 
-	return url, nil
+	return &url, nil
 }
 
 func (cr *cacheRepository) BuildKeyWithPrefix(url string) string {
