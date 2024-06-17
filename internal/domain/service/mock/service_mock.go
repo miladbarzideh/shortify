@@ -5,6 +5,8 @@ import (
 	"fmt"
 
 	"github.com/stretchr/testify/mock"
+
+	"github.com/miladbarzideh/shortify/internal/domain/model"
 )
 
 type Service struct {
@@ -25,7 +27,7 @@ func (m *Service) BuildShortURL(shortCode string) string {
 	return fmt.Sprintf("localhost:8513/api/v1/urls/%s", shortCode)
 }
 
-func (m *Service) CreateShortURLWithRetries(ctx context.Context, longURL string, shortCode string) error {
+func (m *Service) CreateShortURLWithRetries(ctx context.Context, longURL string, shortCode string) (*model.URL, error) {
 	args := m.Called(ctx, longURL, shortCode)
-	return args.Error(0)
+	return args.Get(0).(*model.URL), args.Error(1)
 }

@@ -19,5 +19,9 @@ func (m *Repository) Create(ctx context.Context, url *model.URL) error {
 
 func (m *Repository) FindByShortCode(ctx context.Context, shortCode string) (*model.URL, error) {
 	args := m.Called(ctx, shortCode)
-	return args.Get(0).(*model.URL), args.Error(1)
+	if args.Get(0) != nil {
+		return args.Get(0).(*model.URL), args.Error(1)
+	}
+
+	return nil, args.Error(1)
 }

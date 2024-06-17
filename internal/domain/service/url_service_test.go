@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"errors"
 	"testing"
 
 	"github.com/redis/go-redis/v9"
@@ -12,8 +11,8 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/miladbarzideh/shortify/internal/domain/model"
-	mock2 "github.com/miladbarzideh/shortify/internal/domain/repository/mock"
-	infra2 "github.com/miladbarzideh/shortify/internal/infra"
+	"github.com/miladbarzideh/shortify/internal/domain/repository/mock"
+	"github.com/miladbarzideh/shortify/internal/infra"
 	genMock "github.com/miladbarzideh/shortify/pkg/generator/mock"
 	wpMock "github.com/miladbarzideh/shortify/pkg/worker/mock"
 )
@@ -21,21 +20,20 @@ import (
 type URLServiceTestSuite struct {
 	suite.Suite
 	service       URLService
-	mockRepo      *mock2.Repository
-	mockCacheRepo *mock2.CacheRepository
+	mockRepo      *mock.Repository
+	mockCacheRepo *mock.CacheRepository
 	mockGen       *genMock.Generator
 	mockWP        *wpMock.Pool
 }
 
 func (suite *URLServiceTestSuite) SetupTest() {
-	suite.mockRepo = new(mock2.Repository)
-	suite.mockCacheRepo = new(mock2.CacheRepository)
+	suite.mockRepo = new(mock.Repository)
+	suite.mockCacheRepo = new(mock.CacheRepository)
 	suite.mockGen = new(genMock.Generator)
-	suite.mockWP = new(wpMock.Pool)
-	cfg := infra2.Config{}
+	cfg := infra.Config{}
 	cfg.Server.Address = "localhost:8513"
 	cfg.Shortener.CodeLength = 7
-	suite.service = NewService(logrus.New(), &cfg, suite.mockRepo, suite.mockCacheRepo, suite.mockGen, suite.mockWP, infra2.NOOPTelemetry)
+	suite.service = NewService(logrus.New(), &cfg, suite.mockRepo, suite.mockCacheRepo, suite.mockGen, infra.NOOPTelemetry)
 }
 
 func (suite *URLServiceTestSuite) TestURLService_CreateShortURL_Success() {
@@ -55,7 +53,7 @@ func (suite *URLServiceTestSuite) TestURLService_CreateShortURL_Success() {
 
 	for _, tc := range testCases {
 		suite.mockGen.On("GenerateShortURLCode").Return(tc.expectedURL.ShortCode)
-		suite.mockWP.On("Submit", testifyMock.AnythingOfType("func()")).Return(nil)
+		suite.mockRepo.On("Create", context.TODO(), testifyMock.Anything).Return(nil)
 		url, err := suite.service.CreateShortURL(context.TODO(), tc.input)
 
 		require.NoError(err)
@@ -80,7 +78,7 @@ func (suite *URLServiceTestSuite) TestURLService_CreateShortURL_Failure() {
 
 	for _, tc := range testCases {
 		suite.mockGen.On("GenerateShortURLCode").Return(tc.expectedURL.ShortCode)
-		suite.mockWP.On("Submit", testifyMock.AnythingOfType("func()")).Return(errors.New("pool is shutting down"))
+		suite.mockRepo.On("Create", context.TODO(), testifyMock.Anything).Return(gorm.ErrInvalidData)
 		url, err := suite.service.CreateShortURL(context.TODO(), tc.input)
 
 		require.Error(err)
@@ -88,7 +86,7 @@ func (suite *URLServiceTestSuite) TestURLService_CreateShortURL_Failure() {
 	}
 }
 
-func (suite *URLServiceTestSuite) TestURLService_CreateShortURLWithRetries_Success() {
+func (suite *URLServiceTestSuite) TestURLService_CreateShortURL_DoRetry_Success() {
 	require := suite.Require()
 	testCases := []struct {
 		input model.URL
@@ -100,17 +98,19 @@ func (suite *URLServiceTestSuite) TestURLService_CreateShortURLWithRetries_Succe
 			},
 		},
 	}
-	ctx := context.TODO()
 
 	for _, tc := range testCases {
-		suite.mockRepo.On("Create", ctx, tc.input.LongURL, tc.input.ShortCode).Return(tc.input, nil)
-		err := suite.service.CreateShortURLWithRetries(ctx, tc.input.LongURL, tc.input.ShortCode)
+		suite.mockGen.On("GenerateShortURLCode").Return(tc.input.ShortCode)
+		suite.mockRepo.On("Create", context.TODO(), testifyMock.Anything).Return(gorm.ErrDuplicatedKey).Once()
+		suite.mockRepo.On("Create", context.TODO(), testifyMock.Anything).Return(nil).Once()
+		url, err := suite.service.CreateShortURL(context.TODO(), tc.input.LongURL)
 
 		require.NoError(err)
+		require.NotEmpty(url)
 	}
 }
 
-func (suite *URLServiceTestSuite) TestURLService_CreateShortURLWithRetries_DoRetry_Success() {
+func (suite *URLServiceTestSuite) TestURLService_CreateShortURL_DoRetry_Failure() {
 	require := suite.Require()
 	testCases := []struct {
 		input model.URL
@@ -122,37 +122,15 @@ func (suite *URLServiceTestSuite) TestURLService_CreateShortURLWithRetries_DoRet
 			},
 		},
 	}
-	ctx := context.TODO()
 
 	for _, tc := range testCases {
-		suite.mockRepo.On("Create", ctx, tc.input.LongURL, tc.input.ShortCode).Return(model.URL{}, gorm.ErrDuplicatedKey).Once()
-		suite.mockRepo.On("Create", ctx, tc.input.LongURL, tc.input.ShortCode).Return(tc.input, nil).Once()
-		err := suite.service.CreateShortURLWithRetries(ctx, tc.input.LongURL, tc.input.ShortCode)
-
-		require.NoError(err)
-	}
-}
-
-func (suite *URLServiceTestSuite) TestURLService_CreateShortURLWithRetries_DoRetry_Failure() {
-	require := suite.Require()
-	testCases := []struct {
-		input model.URL
-	}{
-		{
-			input: model.URL{
-				LongURL:   "http://google.com",
-				ShortCode: "shrtcd",
-			},
-		},
-	}
-	ctx := context.TODO()
-
-	for _, tc := range testCases {
-		suite.mockRepo.On("Create", ctx, tc.input.LongURL, tc.input.ShortCode).Return(model.URL{}, gorm.ErrDuplicatedKey).Once()
-		suite.mockRepo.On("Create", ctx, tc.input.LongURL, tc.input.ShortCode).Return(tc.input, gorm.ErrInvalidData).Once()
-		err := suite.service.CreateShortURLWithRetries(ctx, tc.input.LongURL, tc.input.ShortCode)
+		suite.mockGen.On("GenerateShortURLCode").Return(tc.input.ShortCode)
+		suite.mockRepo.On("Create", context.TODO(), testifyMock.Anything).Return(gorm.ErrDuplicatedKey).Once()
+		suite.mockRepo.On("Create", context.TODO(), testifyMock.Anything).Return(gorm.ErrInvalidData).Once()
+		url, err := suite.service.CreateShortURL(context.TODO(), tc.input.LongURL)
 
 		require.Error(err)
+		require.Empty(url)
 	}
 }
 
@@ -171,12 +149,11 @@ func (suite *URLServiceTestSuite) TestURLService_GetLongURL_ReadFromCache_Succes
 			},
 		},
 	}
-	ctx := context.TODO()
 
 	for _, tc := range testCases {
-		suite.mockCacheRepo.On("Get", ctx, tc.input).Return(tc.expectedURL, nil).Once()
-		suite.mockRepo.On("FindByShortCode", testifyMock.AnythingOfType("*model.URL")).Times(0)
-		url, err := suite.service.GetLongURL(ctx, tc.input)
+		suite.mockCacheRepo.On("Get", context.TODO(), tc.input).Return(&tc.expectedURL, nil).Once()
+		suite.mockRepo.On("FindByShortCode", context.TODO(), testifyMock.Anything).Times(0)
+		url, err := suite.service.GetLongURL(context.TODO(), tc.input)
 
 		require.NoError(err)
 		require.Equal(tc.expectedURL.LongURL, url)
@@ -198,13 +175,12 @@ func (suite *URLServiceTestSuite) TestURLService_GetLongURL_ReadFromDb_Success()
 			},
 		},
 	}
-	ctx := context.TODO()
 
 	for _, tc := range testCases {
-		suite.mockCacheRepo.On("Get", ctx, tc.input).Return(model.URL{}, redis.Nil).Once()
-		suite.mockRepo.On("FindByShortCode", tc.input).Return(tc.expectedURL, nil).Once()
-		suite.mockCacheRepo.On("Set", ctx, tc.expectedURL).Return(nil)
-		url, err := suite.service.GetLongURL(ctx, tc.input)
+		suite.mockCacheRepo.On("Get", context.TODO(), tc.input).Return(nil, redis.Nil).Once()
+		suite.mockRepo.On("FindByShortCode", context.TODO(), tc.input).Return(&tc.expectedURL, nil).Once()
+		suite.mockCacheRepo.On("Set", context.TODO(), &tc.expectedURL).Return(nil)
+		url, err := suite.service.GetLongURL(context.TODO(), tc.input)
 
 		require.NoError(err)
 		require.Equal(tc.expectedURL.LongURL, url)
@@ -226,12 +202,11 @@ func (suite *URLServiceTestSuite) TestURLService_GetLongURL_Failure() {
 			},
 		},
 	}
-	ctx := context.TODO()
 
 	for _, tc := range testCases {
-		suite.mockCacheRepo.On("Get", ctx, tc.input).Return(model.URL{}, redis.Nil).Once()
-		suite.mockRepo.On("FindByShortCode", tc.input).Return(model.URL{}, gorm.ErrRecordNotFound).Once()
-		url, err := suite.service.GetLongURL(ctx, tc.input)
+		suite.mockCacheRepo.On("Get", context.TODO(), tc.input).Return(nil, redis.Nil).Once()
+		suite.mockRepo.On("FindByShortCode", context.TODO(), tc.input).Return(nil, gorm.ErrRecordNotFound).Once()
+		url, err := suite.service.GetLongURL(context.TODO(), tc.input)
 
 		require.Error(err)
 		require.Empty(url)

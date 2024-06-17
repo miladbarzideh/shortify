@@ -8,14 +8,15 @@ import (
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 
-	repository2 "github.com/miladbarzideh/shortify/internal/domain/repository"
-	infra2 "github.com/miladbarzideh/shortify/internal/infra"
+	"github.com/miladbarzideh/shortify/internal/domain/model"
+	"github.com/miladbarzideh/shortify/internal/domain/repository"
+	"github.com/miladbarzideh/shortify/internal/infra"
 	"github.com/miladbarzideh/shortify/pkg/generator"
-	"github.com/miladbarzideh/shortify/pkg/worker"
 )
 
 var (
-	ErrURLNotFound = errors.New("url not found")
+	ErrURLNotFound        = errors.New("url not found")
+	ErrMaxRetriesExceeded = errors.New("max retries exceeded")
 )
 
 const maxRetries = 5
@@ -24,26 +25,24 @@ type URLService interface {
 	CreateShortURL(ctx context.Context, url string) (string, error)
 	GetLongURL(ctx context.Context, shortCode string) (string, error)
 	BuildShortURL(shortCode string) string
-	CreateShortURLWithRetries(ctx context.Context, longURL string, shortCode string) error
+	CreateShortURLWithRetries(ctx context.Context, longURL string, shortCode string) (*model.URL, error)
 }
 
 type service struct {
 	logger     *logrus.Logger
-	cfg        *infra2.Config
-	repo       repository2.URLRepository
-	cacheRepo  repository2.URLCacheRepository
+	cfg        *infra.Config
+	repo       repository.URLRepository
+	cacheRepo  repository.URLCacheRepository
 	gen        generator.Generator
-	wp         worker.Pool
-	cacheStats infra2.CacheStats
+	cacheStats infra.CacheStats
 }
 
 func NewService(logger *logrus.Logger,
-	cfg *infra2.Config,
-	repo repository2.URLRepository,
-	cacheRepo repository2.URLCacheRepository,
+	cfg *infra.Config,
+	repo repository.URLRepository,
+	cacheRepo repository.URLCacheRepository,
 	gen generator.Generator,
-	wp worker.Pool,
-	telemetry *infra2.TelemetryProvider,
+	telemetry *infra.TelemetryProvider,
 ) URLService {
 	meter := telemetry.MeterProvider.Meter("urlService")
 	return &service{
@@ -52,51 +51,42 @@ func NewService(logger *logrus.Logger,
 		repo:       repo,
 		cacheRepo:  cacheRepo,
 		gen:        gen,
-		wp:         wp,
-		cacheStats: infra2.NewCacheStats(meter),
+		cacheStats: infra.NewCacheStats(meter),
 	}
 }
 
 func (svc *service) CreateShortURL(ctx context.Context, longURL string) (string, error) {
 	shortCode := svc.gen.GenerateShortURLCode()
-	if err := svc.wp.Submit(func() {
-		if err := svc.CreateShortURLWithRetries(ctx, longURL, shortCode); err != nil {
-			svc.logger.Error(err.Error())
-		}
-	}); err != nil {
-		svc.logger.Error(err.Error())
+	url, err := svc.CreateShortURLWithRetries(ctx, longURL, shortCode)
+	if err != nil {
 		return "", err
 	}
 
-	shortURL := svc.BuildShortURL(shortCode)
+	shortURL := svc.BuildShortURL(url.ShortCode)
 	svc.logger.WithFields(logrus.Fields{
-		"originalURL": longURL,
+		"originalURL": url.LongURL,
 		"shortURL":    shortURL,
 	}).Debug("Create short URL")
 
 	return shortURL, nil
 }
 
-func (svc *service) CreateShortURLWithRetries(ctx context.Context, longURL string, shortCode string) error {
+func (svc *service) CreateShortURLWithRetries(ctx context.Context, longURL string, shortCode string) (*model.URL, error) {
+	url := &model.URL{ShortCode: shortCode, LongURL: longURL}
 	for i := 0; i < maxRetries; i++ {
-		url, err := svc.repo.Create(ctx, longURL, shortCode)
+		err := svc.repo.Create(ctx, url)
 		if err == nil {
-			svc.logger.WithFields(logrus.Fields{
-				"originalURL": url.LongURL,
-				"shortCode":   url.ShortCode,
-			}).Debug("short url created asynchronously")
-
-			return nil
+			return url, nil
 		}
 
 		if !errors.Is(err, gorm.ErrDuplicatedKey) {
-			return err
+			return nil, err
 		}
 
 		svc.logger.Debugf("failed to create short URL '%s'. Retrying...", longURL)
 	}
 
-	return fmt.Errorf("failed to create short URL after %d retries", maxRetries)
+	return nil, fmt.Errorf("failed to create short URL after %d retries %w", maxRetries, ErrMaxRetriesExceeded)
 }
 
 func (svc *service) GetLongURL(ctx context.Context, shortCode string) (string, error) {
