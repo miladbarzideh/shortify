@@ -14,7 +14,6 @@ import (
 	"github.com/miladbarzideh/shortify/internal/domain/repository/mock"
 	"github.com/miladbarzideh/shortify/internal/infra"
 	genMock "github.com/miladbarzideh/shortify/pkg/generator/mock"
-	wpMock "github.com/miladbarzideh/shortify/pkg/worker/mock"
 )
 
 type URLServiceTestSuite struct {
@@ -23,7 +22,6 @@ type URLServiceTestSuite struct {
 	mockRepo      *mock.Repository
 	mockCacheRepo *mock.CacheRepository
 	mockGen       *genMock.Generator
-	mockWP        *wpMock.Pool
 }
 
 func (suite *URLServiceTestSuite) SetupTest() {
