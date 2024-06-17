@@ -27,7 +27,6 @@ type URLRepository interface {
 type URLCacheRepository interface {
 	Set(ctx context.Context, url *model.URL) error
 	Get(ctx context.Context, shortCode string) (*model.URL, error)
-	BuildKeyWithPrefix(url string) string
 }
 
 type Generator interface {

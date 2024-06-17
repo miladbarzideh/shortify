@@ -42,7 +42,7 @@ func (cr *CacheRepository) Set(ctx context.Context, url *model.URL) error {
 		return err
 	}
 
-	err = cr.cache.Set(ctx, cr.BuildKeyWithPrefix(url.ShortCode), value, cacheTTL).Err()
+	err = cr.cache.Set(ctx, cr.buildKeyWithPrefix(url.ShortCode), value, cacheTTL).Err()
 	if err != nil {
 		return err
 	}
@@ -59,7 +59,7 @@ func (cr *CacheRepository) Get(ctx context.Context, shortCode string) (*model.UR
 	_, span := cr.tracer.Start(ctx, "urlCacheRepo.get")
 	defer span.End()
 	var url model.URL
-	result, err := cr.cache.Get(ctx, cr.BuildKeyWithPrefix(shortCode)).Result()
+	result, err := cr.cache.Get(ctx, cr.buildKeyWithPrefix(shortCode)).Result()
 	if err != nil {
 		cr.logger.Error(err)
 		return nil, err
@@ -78,6 +78,6 @@ func (cr *CacheRepository) Get(ctx context.Context, shortCode string) (*model.UR
 	return &url, nil
 }
 
-func (cr *CacheRepository) BuildKeyWithPrefix(url string) string {
+func (cr *CacheRepository) buildKeyWithPrefix(url string) string {
 	return fmt.Sprintf("%s:%s", cachePrefix, url)
 }

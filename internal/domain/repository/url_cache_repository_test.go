@@ -45,7 +45,7 @@ func (suite *URLCacheRepositoryTestSuite) TestURLCacheRepository_Set_Success() {
 
 	for _, tc := range testCases {
 		value, _ := json.Marshal(tc.input)
-		suite.cacheMock.ExpectSet(suite.cacheRepo.BuildKeyWithPrefix(tc.input.ShortCode), value, 24*time.Hour).SetVal(string(value))
+		suite.cacheMock.ExpectSet(suite.cacheRepo.buildKeyWithPrefix(tc.input.ShortCode), value, 24*time.Hour).SetVal(string(value))
 		err := suite.cacheRepo.Set(context.TODO(), &tc.input)
 
 		require.Nil(err)
@@ -70,7 +70,7 @@ func (suite *URLCacheRepositoryTestSuite) TestURLCacheRepository_Set_Failure() {
 
 	for _, tc := range testCases {
 		value, _ := json.Marshal(tc.input)
-		suite.cacheMock.ExpectSet(suite.cacheRepo.BuildKeyWithPrefix(tc.input.ShortCode), value, 24*time.Hour).SetErr(errors.New("FAIL"))
+		suite.cacheMock.ExpectSet(suite.cacheRepo.buildKeyWithPrefix(tc.input.ShortCode), value, 24*time.Hour).SetErr(errors.New("FAIL"))
 		err := suite.cacheRepo.Set(context.TODO(), &tc.input)
 
 		require.NotNil(err)
@@ -95,7 +95,7 @@ func (suite *URLCacheRepositoryTestSuite) TestURLCacheRepository_Get_Success() {
 
 	for _, tc := range testCases {
 		value, _ := json.Marshal(&tc.input)
-		suite.cacheMock.ExpectGet(suite.cacheRepo.BuildKeyWithPrefix(tc.input.ShortCode)).SetVal(string(value))
+		suite.cacheMock.ExpectGet(suite.cacheRepo.buildKeyWithPrefix(tc.input.ShortCode)).SetVal(string(value))
 		actualURL, err := suite.cacheRepo.Get(context.TODO(), tc.input.ShortCode)
 
 		require.Nil(err)
@@ -120,7 +120,7 @@ func (suite *URLCacheRepositoryTestSuite) TestURLCacheRepository_Get_Failure() {
 	}
 
 	for _, tc := range testCases {
-		suite.cacheMock.ExpectGet(suite.cacheRepo.BuildKeyWithPrefix(tc.input.ShortCode)).SetErr(errors.New("nil"))
+		suite.cacheMock.ExpectGet(suite.cacheRepo.buildKeyWithPrefix(tc.input.ShortCode)).SetErr(errors.New("nil"))
 		_, err := suite.cacheRepo.Get(context.TODO(), tc.input.ShortCode)
 
 		require.NotNil(err)

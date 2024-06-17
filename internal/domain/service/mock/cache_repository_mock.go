@@ -25,8 +25,3 @@ func (m *CacheRepository) Get(ctx context.Context, shortCode string) (*model.URL
 
 	return nil, args.Error(1)
 }
-
-func (m *CacheRepository) BuildKeyWithPrefix(url string) string {
-	args := m.Called(url)
-	return args.String(0)
-}
