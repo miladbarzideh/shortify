@@ -9,27 +9,27 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/miladbarzideh/shortify/internal/domain/model"
-	infra2 "github.com/miladbarzideh/shortify/internal/infra"
+	"github.com/miladbarzideh/shortify/internal/infra"
 )
 
 type URLRepository interface {
-	Create(ctx context.Context, longURL string, shortCode string) (model.URL, error)
-	FindByShortCode(ctx context.Context, shortCode string) (model.URL, error)
+	Create(ctx context.Context, url *model.URL) error
+	FindByShortCode(ctx context.Context, shortCode string) (*model.URL, error)
 }
 
 type Repository struct {
 	logger        *logrus.Logger
 	db            *gorm.DB
 	tracer        trace.Tracer
-	createLatency infra2.Latency
-	getLatency    infra2.Latency
+	createLatency infra.Latency
+	getLatency    infra.Latency
 }
 
-func NewRepository(logger *logrus.Logger, db *gorm.DB, telemetry *infra2.TelemetryProvider) URLRepository {
+func NewRepository(logger *logrus.Logger, db *gorm.DB, telemetry *infra.TelemetryProvider) URLRepository {
 	tracer := telemetry.TraceProvider.Tracer("urlRepo")
 	meter := telemetry.MeterProvider.Meter("urlRepo")
-	createLatency := infra2.NewLatency(meter, "db.create")
-	getLatency := infra2.NewLatency(meter, "db.get")
+	createLatency := infra.NewLatency(meter, "db.create")
+	getLatency := infra.NewLatency(meter, "db.get")
 
 	return &Repository{
 		logger:        logger,
@@ -40,29 +40,29 @@ func NewRepository(logger *logrus.Logger, db *gorm.DB, telemetry *infra2.Telemet
 	}
 }
 
-func (r Repository) Create(ctx context.Context, longURL string, shortCode string) (model.URL, error) {
+func (r Repository) Create(ctx context.Context, url *model.URL) error {
 	start := time.Now()
-	url := model.URL{
-		LongURL:   longURL,
-		ShortCode: shortCode,
-	}
-	result := r.db.Create(&url)
-	if result.Error == nil {
-		r.createLatency.Record(ctx, start)
+	result := r.db.Create(url)
+	if result.Error != nil {
+		return result.Error
 	}
 
-	return url, result.Error
+	r.createLatency.Record(ctx, start)
+
+	return nil
 }
 
-func (r Repository) FindByShortCode(ctx context.Context, shortCode string) (model.URL, error) {
+func (r Repository) FindByShortCode(ctx context.Context, shortCode string) (*model.URL, error) {
 	start := time.Now()
 	_, span := r.tracer.Start(ctx, "urlRepo.find")
 	defer span.End()
 	var url model.URL
 	result := r.db.Where("short_code = ?", shortCode).First(&url)
-	if result.Error == nil {
-		r.getLatency.Record(ctx, start)
+	if result.Error != nil {
+		return nil, result.Error
 	}
 
-	return url, result.Error
+	r.getLatency.Record(ctx, start)
+
+	return &url, result.Error
 }
