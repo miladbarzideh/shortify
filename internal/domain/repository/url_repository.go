@@ -12,11 +12,6 @@ import (
 	"github.com/miladbarzideh/shortify/internal/infra"
 )
 
-type URLRepository interface {
-	Create(ctx context.Context, url *model.URL) error
-	FindByShortCode(ctx context.Context, shortCode string) (*model.URL, error)
-}
-
 type Repository struct {
 	logger        *logrus.Logger
 	db            *gorm.DB
@@ -25,7 +20,7 @@ type Repository struct {
 	getLatency    infra.Latency
 }
 
-func NewRepository(logger *logrus.Logger, db *gorm.DB, telemetry *infra.TelemetryProvider) URLRepository {
+func NewRepository(logger *logrus.Logger, db *gorm.DB, telemetry *infra.TelemetryProvider) *Repository {
 	tracer := telemetry.TraceProvider.Tracer("urlRepo")
 	meter := telemetry.MeterProvider.Meter("urlRepo")
 	createLatency := infra.NewLatency(meter, "db.create")

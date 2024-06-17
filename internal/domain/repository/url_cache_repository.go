@@ -19,28 +19,22 @@ const (
 	cacheTTL    = 24 * time.Hour
 )
 
-type URLCacheRepository interface {
-	Set(ctx context.Context, url *model.URL) error
-	Get(ctx context.Context, shortCode string) (*model.URL, error)
-	BuildKeyWithPrefix(url string) string
-}
-
-type cacheRepository struct {
+type CacheRepository struct {
 	logger *logrus.Logger
 	cache  *redis.Client
 	tracer trace.Tracer
 }
 
-func NewCacheRepository(logger *logrus.Logger, redis *redis.Client, telemetry *infra.TelemetryProvider) URLCacheRepository {
+func NewCacheRepository(logger *logrus.Logger, redis *redis.Client, telemetry *infra.TelemetryProvider) *CacheRepository {
 	tracer := telemetry.TraceProvider.Tracer("urlCacheRepo")
-	return &cacheRepository{
+	return &CacheRepository{
 		logger: logger,
 		cache:  redis,
 		tracer: tracer,
 	}
 }
 
-func (cr *cacheRepository) Set(ctx context.Context, url *model.URL) error {
+func (cr *CacheRepository) Set(ctx context.Context, url *model.URL) error {
 	_, span := cr.tracer.Start(ctx, "urlCacheRepo.set")
 	defer span.End()
 	value, err := json.Marshal(url)
@@ -61,7 +55,7 @@ func (cr *cacheRepository) Set(ctx context.Context, url *model.URL) error {
 	return nil
 }
 
-func (cr *cacheRepository) Get(ctx context.Context, shortCode string) (*model.URL, error) {
+func (cr *CacheRepository) Get(ctx context.Context, shortCode string) (*model.URL, error) {
 	_, span := cr.tracer.Start(ctx, "urlCacheRepo.get")
 	defer span.End()
 	var url model.URL
@@ -84,6 +78,6 @@ func (cr *cacheRepository) Get(ctx context.Context, shortCode string) (*model.UR
 	return &url, nil
 }
 
-func (cr *cacheRepository) BuildKeyWithPrefix(url string) string {
+func (cr *CacheRepository) BuildKeyWithPrefix(url string) string {
 	return fmt.Sprintf("%s:%s", cachePrefix, url)
 }

@@ -11,22 +11,21 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/miladbarzideh/shortify/internal/domain/model"
-	"github.com/miladbarzideh/shortify/internal/domain/repository/mock"
+	genMock "github.com/miladbarzideh/shortify/internal/domain/service/mock"
 	"github.com/miladbarzideh/shortify/internal/infra"
-	genMock "github.com/miladbarzideh/shortify/pkg/generator/mock"
 )
 
 type URLServiceTestSuite struct {
 	suite.Suite
-	service       URLService
-	mockRepo      *mock.Repository
-	mockCacheRepo *mock.CacheRepository
+	service       *Service
+	mockRepo      *genMock.Repository
+	mockCacheRepo *genMock.CacheRepository
 	mockGen       *genMock.Generator
 }
 
 func (suite *URLServiceTestSuite) SetupTest() {
-	suite.mockRepo = new(mock.Repository)
-	suite.mockCacheRepo = new(mock.CacheRepository)
+	suite.mockRepo = new(genMock.Repository)
+	suite.mockCacheRepo = new(genMock.CacheRepository)
 	suite.mockGen = new(genMock.Generator)
 	cfg := infra.Config{}
 	cfg.Server.Address = "localhost:8513"

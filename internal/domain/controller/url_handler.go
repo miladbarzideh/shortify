@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"context"
 	"errors"
 	"net/http"
 
@@ -23,27 +24,29 @@ const (
 	msgServiceUnavailable    = "service unavailable"
 )
 
-type URLHandler interface {
-	CreateShortURL() echo.HandlerFunc
-	RedirectToLongURL() echo.HandlerFunc
+type URLService interface {
+	CreateShortURL(ctx context.Context, url string) (string, error)
+	GetLongURL(ctx context.Context, shortCode string) (string, error)
+	BuildShortURL(shortCode string) string
+	CreateShortURLWithRetries(ctx context.Context, longURL string, shortCode string) (*model.URL, error)
 }
 
-type handler struct {
+type Handler struct {
 	logger         *logrus.Logger
 	cfg            *infra.Config
-	service        service.URLService
+	service        URLService
 	tracer         trace.Tracer
 	getReqCount    infra.Counter
 	createReqCount infra.Counter
 }
 
-func NewHandler(logger *logrus.Logger, cfg *infra.Config, service service.URLService, telemetry *infra.TelemetryProvider) URLHandler {
+func NewHandler(logger *logrus.Logger, cfg *infra.Config, service URLService, telemetry *infra.TelemetryProvider) *Handler {
 	tracer := telemetry.TraceProvider.Tracer("urlHandler")
 	meter := telemetry.MeterProvider.Meter("urlHandler")
 	getReqCount := infra.NewCounter(meter, "url.gets")
 	createReqCount := infra.NewCounter(meter, "url.creates")
 
-	return &handler{
+	return &Handler{
 		logger:         logger,
 		cfg:            cfg,
 		service:        service,
@@ -53,7 +56,7 @@ func NewHandler(logger *logrus.Logger, cfg *infra.Config, service service.URLSer
 	}
 }
 
-func (h *handler) CreateShortURL() echo.HandlerFunc {
+func (h *Handler) CreateShortURL() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		ctx, span := h.tracer.Start(c.Request().Context(), "urlHandler.create")
 		defer span.End()
@@ -93,7 +96,7 @@ func (h *handler) CreateShortURL() echo.HandlerFunc {
 	}
 }
 
-func (h *handler) RedirectToLongURL() echo.HandlerFunc {
+func (h *Handler) RedirectToLongURL() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		ctx, span := h.tracer.Start(c.Request().Context(), "urlHandler.redirect")
 		defer span.End()

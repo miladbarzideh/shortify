@@ -9,9 +9,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/miladbarzideh/shortify/internal/domain/model"
-	"github.com/miladbarzideh/shortify/internal/domain/repository"
 	"github.com/miladbarzideh/shortify/internal/infra"
-	"github.com/miladbarzideh/shortify/pkg/generator"
 )
 
 var (
@@ -21,31 +19,39 @@ var (
 
 const maxRetries = 5
 
-type URLService interface {
-	CreateShortURL(ctx context.Context, url string) (string, error)
-	GetLongURL(ctx context.Context, shortCode string) (string, error)
-	BuildShortURL(shortCode string) string
-	CreateShortURLWithRetries(ctx context.Context, longURL string, shortCode string) (*model.URL, error)
+type URLRepository interface {
+	Create(ctx context.Context, url *model.URL) error
+	FindByShortCode(ctx context.Context, shortCode string) (*model.URL, error)
 }
 
-type service struct {
+type URLCacheRepository interface {
+	Set(ctx context.Context, url *model.URL) error
+	Get(ctx context.Context, shortCode string) (*model.URL, error)
+	BuildKeyWithPrefix(url string) string
+}
+
+type Generator interface {
+	GenerateShortURLCode() string
+}
+
+type Service struct {
 	logger     *logrus.Logger
 	cfg        *infra.Config
-	repo       repository.URLRepository
-	cacheRepo  repository.URLCacheRepository
-	gen        generator.Generator
+	repo       URLRepository
+	cacheRepo  URLCacheRepository
+	gen        Generator
 	cacheStats infra.CacheStats
 }
 
 func NewService(logger *logrus.Logger,
 	cfg *infra.Config,
-	repo repository.URLRepository,
-	cacheRepo repository.URLCacheRepository,
-	gen generator.Generator,
+	repo URLRepository,
+	cacheRepo URLCacheRepository,
+	gen Generator,
 	telemetry *infra.TelemetryProvider,
-) URLService {
+) *Service {
 	meter := telemetry.MeterProvider.Meter("urlService")
-	return &service{
+	return &Service{
 		logger:     logger,
 		cfg:        cfg,
 		repo:       repo,
@@ -55,7 +61,7 @@ func NewService(logger *logrus.Logger,
 	}
 }
 
-func (svc *service) CreateShortURL(ctx context.Context, longURL string) (string, error) {
+func (svc *Service) CreateShortURL(ctx context.Context, longURL string) (string, error) {
 	shortCode := svc.gen.GenerateShortURLCode()
 	url, err := svc.CreateShortURLWithRetries(ctx, longURL, shortCode)
 	if err != nil {
@@ -71,7 +77,7 @@ func (svc *service) CreateShortURL(ctx context.Context, longURL string) (string,
 	return shortURL, nil
 }
 
-func (svc *service) CreateShortURLWithRetries(ctx context.Context, longURL string, shortCode string) (*model.URL, error) {
+func (svc *Service) CreateShortURLWithRetries(ctx context.Context, longURL string, shortCode string) (*model.URL, error) {
 	url := &model.URL{ShortCode: shortCode, LongURL: longURL}
 	for i := 0; i < maxRetries; i++ {
 		err := svc.repo.Create(ctx, url)
@@ -89,7 +95,7 @@ func (svc *service) CreateShortURLWithRetries(ctx context.Context, longURL strin
 	return nil, fmt.Errorf("failed to create short URL after %d retries %w", maxRetries, ErrMaxRetriesExceeded)
 }
 
-func (svc *service) GetLongURL(ctx context.Context, shortCode string) (string, error) {
+func (svc *Service) GetLongURL(ctx context.Context, shortCode string) (string, error) {
 	if url, err := svc.cacheRepo.Get(ctx, shortCode); err == nil {
 		svc.cacheStats.Hits.Inc(ctx)
 		return url.LongURL, nil
@@ -117,6 +123,6 @@ func (svc *service) GetLongURL(ctx context.Context, shortCode string) (string, e
 	return url.LongURL, nil
 }
 
-func (svc *service) BuildShortURL(shortCode string) string {
+func (svc *Service) BuildShortURL(shortCode string) string {
 	return fmt.Sprintf("%s/api/v1/urls/%s", svc.cfg.Server.Address, shortCode)
 }

@@ -10,7 +10,7 @@ import (
 
 type GeneratorTestSuite struct {
 	suite.Suite
-	generator *generator
+	generator *RandomGenerator
 }
 
 func (suite *GeneratorTestSuite) SetupTest() {

@@ -28,7 +28,7 @@ func (a AnyTime) Match(v driver.Value) bool {
 
 type URLRepositoryTestSuite struct {
 	suite.Suite
-	repo URLRepository
+	repo *Repository
 	mock sqlmock.Sqlmock
 }
 

@@ -17,7 +17,7 @@ import (
 
 type URLCacheRepositoryTestSuite struct {
 	suite.Suite
-	cacheRepo URLCacheRepository
+	cacheRepo *CacheRepository
 	cacheMock redismock.ClientMock
 }
 

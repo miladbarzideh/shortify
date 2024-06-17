@@ -13,9 +13,9 @@ import (
 	"github.com/stretchr/testify/suite"
 	"gorm.io/gorm"
 
+	"github.com/miladbarzideh/shortify/internal/domain/controller/mock"
 	"github.com/miladbarzideh/shortify/internal/domain/model"
 	"github.com/miladbarzideh/shortify/internal/domain/service"
-	"github.com/miladbarzideh/shortify/internal/domain/service/mock"
 	"github.com/miladbarzideh/shortify/internal/infra"
 )
 
@@ -26,7 +26,7 @@ const (
 type URLHandlerTestSuite struct {
 	suite.Suite
 	mockService *mock.Service
-	handler     URLHandler
+	handler     *Handler
 }
 
 func (suite *URLHandlerTestSuite) SetupTest() {
