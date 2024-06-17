@@ -67,6 +67,7 @@ func (suite *URLHandlerTestSuite) TestURLHandler_CreateShortURL_Failure() {
 	require := suite.Require()
 	testCases := []struct {
 		input        interface{}
+		err          error
 		expectedCode int
 	}{
 		{
@@ -79,6 +80,12 @@ func (suite *URLHandlerTestSuite) TestURLHandler_CreateShortURL_Failure() {
 		},
 		{
 			input:        model.URLData{URL: "https://echo.labstack.com/docs/testing"},
+			err:          service.ErrMaxRetriesExceeded,
+			expectedCode: http.StatusServiceUnavailable,
+		},
+		{
+			input:        model.URLData{URL: "https://echo.labstack.com/docs/testing"},
+			err:          gorm.ErrInvalidData,
 			expectedCode: http.StatusInternalServerError,
 		},
 	}
@@ -86,7 +93,10 @@ func (suite *URLHandlerTestSuite) TestURLHandler_CreateShortURL_Failure() {
 	for _, tc := range testCases {
 		c, _ := newEchoContext(http.MethodPost, "/api/v1/urls", tc.input, "")
 
-		suite.mockService.On("CreateShortURL", testifymock.Anything, testifymock.Anything).Return("", gorm.ErrRecordNotFound)
+		if tc.err != nil {
+			suite.mockService.On("CreateShortURL", testifymock.Anything, testifymock.Anything).Return("", tc.err).Once()
+		}
+
 		err := suite.handler.CreateShortURL()(c)
 
 		require.Error(err)

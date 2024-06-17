@@ -20,6 +20,7 @@ const (
 	msgInvalidURLError       = "invalid URL"
 	msgInvalidShortCodeError = "invalid short code"
 	msgInternalServerError   = "internal server error"
+	msgServiceUnavailable    = "service unavailable"
 )
 
 type URLHandler interface {
@@ -77,6 +78,10 @@ func (h *handler) CreateShortURL() echo.HandlerFunc {
 			h.logger.Error(err.Error())
 			span.RecordError(err)
 			span.SetStatus(codes.Error, err.Error())
+			if errors.Is(err, service.ErrMaxRetriesExceeded) {
+				return echo.NewHTTPError(http.StatusServiceUnavailable, msgServiceUnavailable)
+			}
+
 			return echo.NewHTTPError(http.StatusInternalServerError, msgInternalServerError)
 		}
 
